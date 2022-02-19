@@ -1,13 +1,13 @@
 package com.diogo_portela.imdb_craper.model
 
-import java.util.Date
+import java.time.LocalDate
 
 data class Episode (
-    val imdbId: String,
-    val number: Int,
-    val name: String,
-    val airdate: Date,
-    val ratingValue: Float,
-    val ratingCount: Int,
-    val summary: String
+    val imdbId: String? = null,
+    val number: Int? = null,
+    val name: String? = null,
+    val airdate: LocalDate? = null,
+    val ratingValue: Float? = null,
+    val ratingCount: Int? = null,
+    val summary: String? = null
 )

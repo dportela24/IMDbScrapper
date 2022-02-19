@@ -21,7 +21,8 @@ dependencies {
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-	implementation ("org.jsoup:jsoup:1.14.3")
+	implementation("org.jsoup:jsoup:1.14.3")
+	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.springframework.amqp:spring-rabbit-test")
 }
