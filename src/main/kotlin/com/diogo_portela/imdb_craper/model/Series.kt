@@ -4,17 +4,17 @@ import java.time.Duration
 import java.time.Year
 
 data class Series (
-    val imdbId: String? = null,
-    val name: String? = null,
-    val originalName: String? = null,
-    val summary: String? = null,
-    val episodeDuration: Duration? = null,
-    val startYear: Int? = null,
-    val endYear: Int? = null,
-    val genres: Set<String>? = null,
-    val ratingValue: Float? = null,
-    val ratingCount: Int? = null,
-    val posterURL: String? = null,
-    val numberSeasons: Int? = null,
-    val seasons: Set<Season>? = null
+    val imdbId: String,
+    val name: String,
+    val originalName: String?,
+    val summary: String,
+    val episodeDuration: Duration,
+    val startYear: Int,
+    val endYear: Int?,
+    val genres: Set<String>,
+    val ratingValue: Float,
+    val ratingCount: Int,
+    val posterURL: String,
+    val numberSeasons: Int,
+    val seasons: Set<Season>
 )

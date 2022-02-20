@@ -35,15 +35,17 @@ class SeriesService(
         val doc = fetchSeriesHtml(imdbId)
 
         val linkedDataJson = doc.getElementsByAttributeValueStarting("type", "application/ld+json").first()?.data()
-            ?: throw raiseBuildingError("Could not find LinkedData element")
+            ?: throw raiseBuildingError("Could not find LinkedData element. ")
 
         val linkedData = getLinkedData(linkedDataJson)
 
         validateTitleType(imdbId, linkedData.type)
 
+        val (name, originalName) = getSeriesName(linkedData)
+
         val undertitleElements = getUndertitleElements(doc)
 
-        val runtimeText = undertitleElements[1].let { it.children().last()?.text() }
+        val runtimeText = undertitleElements[1]?.children()?.last()?.text()
         val (startYear, endYear) = parseStartAndEndYear(runtimeText)
 
         val episodeDurationText = undertitleElements.last()?.text()
@@ -56,8 +58,8 @@ class SeriesService(
 
         return Series(
             imdbId = imdbId,
-            name = linkedData.alternateName ?: linkedData.name,
-            originalName = linkedData.alternateName?.run { linkedData.name },
+            name = name,
+            originalName = originalName,
             summary = linkedData.description,
             startYear = startYear,
             endYear = endYear,
@@ -71,13 +73,13 @@ class SeriesService(
         )
     }
 
-    private fun raiseBuildingError(message: String) : ErrorBuildingSeriesException {
+    fun raiseBuildingError(message: String) : ErrorBuildingSeriesException {
         val errorMessage = "Error while building Series. $message"
         logger.error(errorMessage)
         return ErrorBuildingSeriesException(message)
     }
 
-    private fun fetchSeriesHtml(imdbId: String) : Document {
+    fun fetchSeriesHtml(imdbId: String) : Document {
         return try {
             logger.trace("Making request for series data")
             jSoupConnection
@@ -90,7 +92,7 @@ class SeriesService(
         }
     }
 
-    private fun validateTitleType(imdbId: String, type: String) {
+    fun validateTitleType(imdbId: String, type: String) {
         if (type != "TVSeries") {
             val message = "The imdb id $imdbId given is not a TV Series but a $type"
             logger.warn(message)
@@ -98,7 +100,7 @@ class SeriesService(
         }
     }
 
-    private fun getLinkedData(json: String) : ApplicationLinkedData {
+    fun getLinkedData(json: String) : ApplicationLinkedData {
         return try {
             ApplicationLinkedData.fromJSON(json)
         } catch (ex: Exception) {
@@ -106,27 +108,19 @@ class SeriesService(
         }
     }
 
-    private fun getNumberSeasonsElement(doc: Document) =
-        doc.getElementsByAttributeValueStarting("for", "browse-episodes-season").first()?.text()
-            ?: run{
-                doc.getElementsByAttributeValueStarting("class", "BrowseEpisodes__BrowseLinksContainer").first()?.child(1)?.text()
-            }
+    fun getSeriesName(linkedData: ApplicationLinkedData) : Pair<String, String?> {
+        return linkedData.alternateName?.run {
+            Pair(linkedData.alternateName, linkedData.name)
+        } ?: run {
+            Pair(linkedData.name, null)
+        }
+    }
 
-    private fun getUndertitleElements(doc: Document) =
+    fun getUndertitleElements(doc: Document) =
         doc.getElementsByAttributeValueStarting("data-testid", "hero-title-block__metadata").first()?.children()
             ?: throw raiseBuildingError("Could not find undertitle elements")
 
-    private fun parseNumberSeasons(input: String?) : Int {
-        val numberSeasonsGroupValues = try {
-            matchGroupsInRegex(input!!.lowercase(), "(\\d+) seasons?")!!
-        } catch (_: Exception) {
-            throw raiseBuildingError(generateParseErrorMessage("numberSeasons", input))
-        }
-
-        return numberSeasonsGroupValues[1].toInt()
-    }
-
-    private fun parseStartAndEndYear(input: String?) : Pair<Int, Int?> {
+    fun parseStartAndEndYear(input: String?) : Pair<Int, Int?> {
         return try {
             val assertedInput = input!!
             val isSingleYear = Regex("(\\d+)\$").matches(assertedInput)
@@ -147,11 +141,11 @@ class SeriesService(
         }
     }
 
-    private fun parseDurationFromString(input: String?) : Duration {
+    fun parseDurationFromString(input: String?) : Duration {
         val groupValues = try {
             matchGroupsInRegex(input!!.replace(" ",""), "(?:(\\d+)h)?(?:(\\d+)m)?")!!
         } catch (_:Exception) {
-            throw raiseBuildingError(generateParseErrorMessage("duration", input))
+            throw raiseBuildingError(generateParseErrorMessage("episodeDuration", input))
         }
 
         val hours = groupValues[1].toLongOrNull() ?: 0
@@ -160,10 +154,26 @@ class SeriesService(
         return Duration.ofHours(hours).plusMinutes(minutes)
     }
 
-    private fun generateParseErrorMessage(field: String, input: String?) : String {
+    fun getNumberSeasonsElement(doc: Document) =
+        doc.getElementsByAttributeValueStarting("for", "browse-episodes-season").first()?.text()
+            ?: run{
+                doc.getElementsByAttributeValueStarting("class", "BrowseEpisodes__BrowseLinksContainer").first()?.child(1)?.text()
+            }
+
+    fun parseNumberSeasons(input: String?) : Int {
+        val numberSeasonsGroupValues = try {
+            matchGroupsInRegex(input!!.lowercase(), "(\\d+) seasons?")!!
+        } catch (_: Exception) {
+            throw raiseBuildingError(generateParseErrorMessage("numberSeasons", input))
+        }
+
+        return numberSeasonsGroupValues[1].toInt()
+    }
+
+    fun generateParseErrorMessage(field: String, input: String?) : String {
         return if (input.isNullOrBlank())
             "Could not find $field block"
         else
-            "Could not parse $field. Input string was $input"
+            "Could not parse $field. Input string was $input. "
     }
 }
