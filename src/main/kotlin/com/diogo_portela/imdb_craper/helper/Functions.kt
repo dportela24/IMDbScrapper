@@ -4,3 +4,5 @@ fun matchGroupsInRegex(input: String, pattern: String) : List<String>? {
     val regex = Regex(pattern).find(input)
     return regex?.groupValues
 }
+
+fun generateTitleUrl(imdbId: String) = "/title/$imdbId"

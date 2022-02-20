@@ -1,5 +1,6 @@
 package com.diogo_portela.imdb_craper.service
 
+import com.diogo_portela.imdb_craper.helper.generateTitleUrl
 import com.diogo_portela.imdb_craper.helper.matchGroupsInRegex
 import com.diogo_portela.imdb_craper.model.ApplicationLinkedData
 import com.diogo_portela.imdb_craper.model.JSoupConnection
@@ -34,35 +35,22 @@ class SeriesService(
         val doc = fetchSeriesHtml(imdbId)
 
         val linkedDataJson = doc.getElementsByAttributeValueStarting("type", "application/ld+json").first()?.data()
-            ?: throw ErrorBuildingSeriesException(imdbId, "Could not find LinkedData element")
+            ?: throw raiseBuildingError("Could not find LinkedData element")
 
-        val linkedData : ApplicationLinkedData =
-            try {
-                linkedDataJson?.run{ jacksonObjectMapper().readValue(linkedDataJson) }
-            } catch (ex: Exception) {
-                throw ErrorBuildingSeriesException(imdbId, "An error ocurred while parsing the linkedData element. " + ex.message)
-            }
+        val linkedData = getLinkedData(linkedDataJson)
 
-        if (linkedData.type != "TVSeries")
-            throw NotATvSeriesException("The imdb id $imdbId given is not a TV Series but a ${linkedData.type}")
+        validateTitleType(imdbId, linkedData.type)
 
         val undertitleElements = getUndertitleElements(doc)
-            ?: throw ErrorBuildingSeriesException(imdbId, "Could not find undertitle elements")
 
         val runtimeText = undertitleElements[1].let { it.children().last()?.text() }
-            ?: throw ErrorBuildingSeriesException(imdbId, "Could not find runtime text element")
-
+        val (startYear, endYear) = parseStartAndEndYear(runtimeText)
 
         val episodeDurationText = undertitleElements.last()?.text()
-            ?: throw ErrorBuildingSeriesException(imdbId, "Could not find episode duration text element")
+        val episodeDuration = parseDurationFromString(episodeDurationText)
 
         val numberSeasonsText = getNumberSeasonsElement(doc)
-            ?: throw ErrorBuildingSeriesException(imdbId, "Could not find number of seasons element")
-
-        val (startYear, endYear) = parseStartAndEndYear(runtimeText)
-        val episodeDuration = parseDurationFromString(episodeDurationText)
         val numberSeasons = parseNumberSeasons(numberSeasonsText)
-
 
         val seasons = seasonService.getSeasonsOfSeries(imdbId, numberSeasons)
 
@@ -83,18 +71,40 @@ class SeriesService(
         )
     }
 
+    private fun raiseBuildingError(message: String) : ErrorBuildingSeriesException {
+        val errorMessage = "Error while building Series. $message"
+        logger.error(errorMessage)
+        return ErrorBuildingSeriesException(message)
+    }
+
     private fun fetchSeriesHtml(imdbId: String) : Document {
         return try {
-            logger.info("Making request for series data")
+            logger.trace("Making request for series data")
             jSoupConnection
                 .newConnection(generateTitleUrl(imdbId))
                 .get()
         } catch (ex: Exception) {
-            throw JSoupConnectionException("Could not retrieve Series HTML. " + ex.message)
+            val errorMessage = "Could not retrieve Series HTML. ${ex.message}"
+            logger.error(errorMessage)
+            throw JSoupConnectionException(errorMessage)
         }
     }
 
-    private fun generateTitleUrl(imdbId: String) = "/title/$imdbId"
+    private fun validateTitleType(imdbId: String, type: String) {
+        if (type != "TVSeries") {
+            val message = "The imdb id $imdbId given is not a TV Series but a $type"
+            logger.warn(message)
+            throw NotATvSeriesException(message)
+        }
+    }
+
+    private fun getLinkedData(json: String) : ApplicationLinkedData {
+        return try {
+            ApplicationLinkedData.fromJSON(json)
+        } catch (ex: Exception) {
+            throw raiseBuildingError("An error occurred while deserializing the linkedData element. " + ex.message)
+        }
+    }
 
     private fun getNumberSeasonsElement(doc: Document) =
         doc.getElementsByAttributeValueStarting("for", "browse-episodes-season").first()?.text()
@@ -104,38 +114,56 @@ class SeriesService(
 
     private fun getUndertitleElements(doc: Document) =
         doc.getElementsByAttributeValueStarting("data-testid", "hero-title-block__metadata").first()?.children()
+            ?: throw raiseBuildingError("Could not find undertitle elements")
 
-    private fun parseNumberSeasons(seasonsText: String) : Int {
-        val numberSeasonsGroupValues = matchGroupsInRegex(seasonsText.lowercase(), "(\\d+) seasons?")
-            ?: throw ErrorBuildingSeriesException(message = "Could not parse number of seasons. Input string was $seasonsText")
+    private fun parseNumberSeasons(input: String?) : Int {
+        val numberSeasonsGroupValues = try {
+            matchGroupsInRegex(input!!.lowercase(), "(\\d+) seasons?")!!
+        } catch (_: Exception) {
+            throw raiseBuildingError(generateParseErrorMessage("numberSeasons", input))
+        }
 
         return numberSeasonsGroupValues[1].toInt()
     }
 
-    private fun parseStartAndEndYear(runtimeText: String) : Pair<Int, Int?> {
-        val isSingleYear = Regex("(\\d+)\$").matches(runtimeText)
+    private fun parseStartAndEndYear(input: String?) : Pair<Int, Int?> {
+        return try {
+            val assertedInput = input!!
+            val isSingleYear = Regex("(\\d+)\$").matches(assertedInput)
 
-        return if (isSingleYear) {
-            val year = runtimeText.toInt()
-            Pair(year, year)
-        } else {
-            val runtimeGroupValues = matchGroupsInRegex(runtimeText, "(\\d+)–?(\\d+)?")
-                ?: throw ErrorBuildingSeriesException(message = "Could not parse runtime. Input string was $runtimeText")
+            if (isSingleYear) {
+                val year = assertedInput.toInt()
+                Pair(year, year)
+            } else {
+                val runtimeGroupValues = matchGroupsInRegex(assertedInput, "(\\d+)–?(\\d+)?")!!
 
-            val startYear = runtimeGroupValues[1].toInt()
-            val endYear = runtimeGroupValues[2].toIntOrNull()
+                val startYear = runtimeGroupValues[1].toInt()
+                val endYear = runtimeGroupValues[2].toIntOrNull()
 
-            Pair(startYear, endYear)
+                Pair(startYear, endYear)
+            }
+        } catch (_: Exception) {
+            throw raiseBuildingError(generateParseErrorMessage("runtime", input))
         }
     }
 
-    private fun parseDurationFromString(input: String) : Duration {
-        val groupValues = matchGroupsInRegex(input.replace(" ",""), "(?:(\\d+)h)?(?:(\\d+)m)?")
-            ?: throw ErrorBuildingSeriesException(message = "Could not parse time duration. Input string was $input.")
+    private fun parseDurationFromString(input: String?) : Duration {
+        val groupValues = try {
+            matchGroupsInRegex(input!!.replace(" ",""), "(?:(\\d+)h)?(?:(\\d+)m)?")!!
+        } catch (_:Exception) {
+            throw raiseBuildingError(generateParseErrorMessage("duration", input))
+        }
 
         val hours = groupValues[1].toLongOrNull() ?: 0
         val minutes = groupValues[2].toLongOrNull() ?: 0
 
         return Duration.ofHours(hours).plusMinutes(minutes)
+    }
+
+    private fun generateParseErrorMessage(field: String, input: String?) : String {
+        return if (input.isNullOrBlank())
+            "Could not find $field block"
+        else
+            "Could not parse $field. Input string was $input"
     }
 }

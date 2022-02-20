@@ -2,6 +2,8 @@ package com.diogo_portela.imdb_craper.model
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class ApplicationLinkedData (
@@ -19,4 +21,9 @@ data class ApplicationLinkedData (
         val ratingCount: Int,
         val ratingValue: Float
     )
+
+    companion object {
+        fun fromJSON(json: String) : ApplicationLinkedData =
+                jacksonObjectMapper().readValue(json)
+    }
 }

@@ -2,9 +2,13 @@ package com.diogo_portela.imdb_craper.service
 
 import com.diogo_portela.imdb_craper.model.JSoupConnection
 import com.diogo_portela.imdb_craper.model.Season
+import com.diogo_portela.imdb_craper.model.exception.ErrorBuildingSeasonException
+import com.diogo_portela.imdb_craper.model.exception.ErrorBuildingSeriesException
+import com.diogo_portela.imdb_craper.model.exception.JSoupConnectionException
 import kotlinx.coroutines.*
 import kotlinx.coroutines.slf4j.MDCContext
 import org.apache.logging.slf4j.MDCContextMap
+import org.jsoup.nodes.Document
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import org.springframework.stereotype.Service
@@ -36,15 +40,13 @@ class SeasonService(
     suspend fun buildSeason(imdbId: String, seasonNumber: Int) : Season {
         MDC.put("season", seasonNumber.toString())
 
-        logger.trace("Making request for season")
+        val doc = fetchSeasonHtml(imdbId, seasonNumber)
 
-        val doc = jSoupConnection
-            .newConnection("/title/$imdbId/episodes?season=$seasonNumber")
-            .get()
+        val numberEpisodesText = doc.getElementsByAttributeValue("itemprop", "numberofEpisodes").first()?.attr("content")
+            ?: throw raiseBuildingError("Could not find number of episodes text")
 
-        val numberEpisodesText = doc.getElementsByAttributeValue("itemprop", "numberofEpisodes").attr("content")
         val numberEpisodes = numberEpisodesText.toIntOrNull()
-            ?: throw RuntimeException("Could not fetch number of episodes")
+            ?: throw raiseBuildingError("Could not parse number of episodes. Input string was $numberEpisodesText")
 
         val episodes = episodeService.getEpisodesOfSeason(doc, numberEpisodes)
 
@@ -53,5 +55,27 @@ class SeasonService(
             numberEpisodes = numberEpisodes,
             episodes = episodes
         )
+    }
+
+    private fun fetchSeasonHtml(imdbId: String, seasonNumber: Int) : Document {
+        return try {
+            logger.trace("Making request for season")
+            jSoupConnection
+                .newConnection(generateSeasonUrl(imdbId, seasonNumber))
+                .get()
+        } catch (ex: Exception) {
+            val errorMessage = "Could not retrieve Season HTML. ${ex.message}"
+            logger.error(errorMessage)
+            throw JSoupConnectionException(errorMessage)
+        }
+    }
+
+    private fun generateSeasonUrl(imdbId: String, seasonNumber: Int) : String
+        = "/title/$imdbId/episodes?season=$seasonNumber"
+
+    private fun raiseBuildingError(message: String) : ErrorBuildingSeasonException {
+        val errorMessage = "Error while building Season. $message"
+        logger.error(errorMessage)
+        return ErrorBuildingSeasonException(message)
     }
 }

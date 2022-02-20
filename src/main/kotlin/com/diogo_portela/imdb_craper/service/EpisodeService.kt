@@ -3,6 +3,8 @@ package com.diogo_portela.imdb_craper.service
 import com.diogo_portela.imdb_craper.helper.matchGroupsInRegex
 import com.diogo_portela.imdb_craper.model.Episode
 import com.diogo_portela.imdb_craper.model.JSoupConnection
+import com.diogo_portela.imdb_craper.model.exception.ErrorBuildingEpisodeException
+import com.diogo_portela.imdb_craper.model.exception.ErrorBuildingSeriesException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -17,9 +19,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @Service
-class EpisodeService(
-    val jSoupConnection: JSoupConnection
-) {
+class EpisodeService{
     val logger = LoggerFactory.getLogger(this::class.java)
 
     fun getEpisodesOfSeason(doc: Document, numberEpisodes: Int) : Set<Episode> {
@@ -44,15 +44,16 @@ class EpisodeService(
     private fun buildEpisode(element: Element) : Episode {
         val episodeNumberText = element.getElementsByAttributeValue("itemprop", "episodeNumber").attr("content")
         val episodeNumber = episodeNumberText.toIntOrNull()
-            ?: throw RuntimeException("Could not fetch episode number")
+            ?: throw raiseBuildingError("Could not find episode number")
 
         MDC.put("episode", episodeNumber.toString())
         logger.trace("Building episode")
 
-        val nameElement = element.getElementsByAttributeValue("itemprop", "name")
+        val nameElement = element.getElementsByAttributeValue("itemprop", "name").first()
+            ?: throw raiseBuildingError("Could not find name element")
 
         val name = nameElement.text()
-        if (!validateNonParsedField(name)) throw RuntimeException("Could not fetch episode name")
+        if (!validateNonParsedField(name)) throw raiseBuildingError("Could not find episode name")
 
         val url = nameElement.attr("href")
         val imdbId = parseImdbId(url)
@@ -63,7 +64,7 @@ class EpisodeService(
         val (ratingValue, ratingCount) = getRatingData(element)
 
         val summary = element.getElementsByClass("item_description").text()
-        if (!validateNonParsedField(summary)) throw RuntimeException("Could not fetch episode summary")
+        if (!validateNonParsedField(summary)) throw raiseBuildingError("Could not find episode summary")
 
         return Episode(
             name = name,
@@ -83,9 +84,10 @@ class EpisodeService(
         val ratingCountText = element.getElementsByClass("ipl-rating-star__total-votes").text()
 
         val ratingValue = ratingValueText?.toFloatOrNull()
-            ?: throw RuntimeException("Could not parse episode rating value. Input string was $ratingValueText")
+            ?: throw raiseBuildingError(generateParseErrorMessage("ratingValue", ratingValueText))
+
         val ratingCount = parseRatingCount(ratingCountText)
-            ?: throw RuntimeException("Could not parse episode rating count. Input string was $ratingCountText")
+            ?: throw raiseBuildingError(generateParseErrorMessage("ratingCount", ratingCountText))
 
         return Pair(ratingValue, ratingCount)
     }
@@ -105,13 +107,26 @@ class EpisodeService(
             } catch (_: Exception) {}
         }
 
-        throw RuntimeException("Could not parse airdate. Input string was $input")
+        throw raiseBuildingError(generateParseErrorMessage("airdate", input))
     }
 
     private fun parseImdbId(url: String) : String {
         val idGroupValues = matchGroupsInRegex(url, "/title/([a-zA-Z0-9]+)/.+")
-            ?: throw RuntimeException("Could not parse episode imdb id. Input string was $url")
+            ?: throw raiseBuildingError(generateParseErrorMessage("imdbId", url))
 
         return idGroupValues[1]
+    }
+
+    private fun generateParseErrorMessage(field: String, input: String?) : String {
+        return if (input.isNullOrBlank())
+                "Could not find $field block"
+            else
+                "Could not parse $field. Input string was $input"
+    }
+
+    private fun raiseBuildingError(message: String) : ErrorBuildingEpisodeException {
+        val errorMessage = "Error while building Episode. $message"
+        logger.error(errorMessage)
+        return ErrorBuildingEpisodeException(message)
     }
 }
