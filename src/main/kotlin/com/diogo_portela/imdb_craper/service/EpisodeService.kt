@@ -7,18 +7,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.slf4j.MDCContext
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import org.springframework.stereotype.Service
-import java.lang.reflect.Array.set
-import java.text.DateFormat
-import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.*
-import kotlin.math.log
 
 @Service
 class EpisodeService(
@@ -32,7 +28,7 @@ class EpisodeService(
         val episodesList = doc.getElementsByClass("list detail eplist").first()
             ?: throw RuntimeException("Could not fetch episode list")
 
-        val episodes = runBlocking {
+        val episodes = runBlocking(MDCContext()) {
             episodesList.children().map { element ->
                 async(Dispatchers.IO) {
                     buildEpisode(element)
@@ -50,8 +46,8 @@ class EpisodeService(
         val episodeNumber = episodeNumberText.toIntOrNull()
             ?: throw RuntimeException("Could not fetch episode number")
 
-        MDC.put("episode_number", episodeNumber.toString())
-        logger.info("Building episode")
+        MDC.put("episode", episodeNumber.toString())
+        logger.trace("Building episode")
 
         val nameElement = element.getElementsByAttributeValue("itemprop", "name")
 

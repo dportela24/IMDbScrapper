@@ -7,13 +7,12 @@ import com.fasterxml.jackson.annotation.JsonProperty
 data class ApplicationLinkedData (
     @JsonProperty("@type")
     val type: String,
-    val url: String,
     val name: String,
     val alternateName: String?,
     val image: String,
     val description: String,
     val aggregateRating: AggregateRating,
-    val genre: List<String>
+    val genre: Set<String>
 ){
     @JsonIgnoreProperties(ignoreUnknown = true)
     data class AggregateRating(

@@ -24,11 +24,11 @@ class Scrap(
     @GetMapping("/title/id/{imdbId}")
     fun scrapTitleById(@PathVariable imdbId: String) : ResponseEntity<Series> {
         MDC.put("request_id", UUID.randomUUID().toString())
-
         logger.info("Received request for $imdbId")
 
         val series = seriesService.scrapTitle(imdbId)
-        logger.info("Returning request")
+
+        logger.info("Sending request response")
         return ResponseEntity.ok(series)
     }
 }

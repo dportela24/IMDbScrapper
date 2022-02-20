@@ -3,6 +3,8 @@ package com.diogo_portela.imdb_craper.service
 import com.diogo_portela.imdb_craper.model.JSoupConnection
 import com.diogo_portela.imdb_craper.model.Season
 import kotlinx.coroutines.*
+import kotlinx.coroutines.slf4j.MDCContext
+import org.apache.logging.slf4j.MDCContextMap
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import org.springframework.stereotype.Service
@@ -18,7 +20,7 @@ class SeasonService(
     fun getSeasonsOfSeries(imdbId: String, numberSeasons: Int) : Set<Season> {
         logger.info("Processing $numberSeasons seasons")
 
-        val seasons = runBlocking {
+        val seasons = runBlocking(MDCContext()) {
            (1..numberSeasons).map { seasonNumber ->
                  async(Dispatchers.IO) {
                     buildSeason(imdbId, seasonNumber)
@@ -32,9 +34,9 @@ class SeasonService(
     }
 
     suspend fun buildSeason(imdbId: String, seasonNumber: Int) : Season {
-        MDC.put("season_number", seasonNumber.toString())
+        MDC.put("season", seasonNumber.toString())
 
-        logger.info("Making request for season")
+        logger.trace("Making request for season")
 
         val doc = jSoupConnection
             .newConnection("/title/$imdbId/episodes?season=$seasonNumber")
