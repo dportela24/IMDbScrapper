@@ -1,5 +1,6 @@
 package com.diogo_portela.imdb_craper.service
 
+import com.diogo_portela.imdb_craper.helper.generateParseErrorMessage
 import com.diogo_portela.imdb_craper.helper.generateTitleUrl
 import com.diogo_portela.imdb_craper.helper.matchGroupsInRegex
 import com.diogo_portela.imdb_craper.model.ApplicationLinkedData
@@ -168,12 +169,5 @@ class SeriesService(
         }
 
         return numberSeasonsGroupValues[1].toInt()
-    }
-
-    fun generateParseErrorMessage(field: String, input: String?) : String {
-        return if (input.isNullOrBlank())
-            "Could not find $field block"
-        else
-            "Could not parse $field. Input string was $input. "
     }
 }

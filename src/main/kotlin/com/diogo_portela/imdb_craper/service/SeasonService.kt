@@ -1,5 +1,7 @@
 package com.diogo_portela.imdb_craper.service
 
+import com.diogo_portela.imdb_craper.helper.generateParseErrorMessage
+import com.diogo_portela.imdb_craper.helper.generateSeasonUrl
 import com.diogo_portela.imdb_craper.model.JSoupConnection
 import com.diogo_portela.imdb_craper.model.Season
 import com.diogo_portela.imdb_craper.model.exception.ErrorBuildingSeasonException
@@ -25,11 +27,17 @@ class SeasonService(
         logger.info("Processing $numberSeasons seasons")
 
         val seasons = runBlocking(MDCContext()) {
-           (1..numberSeasons).map { seasonNumber ->
+           val jobs = (1..numberSeasons).map { seasonNumber ->
                  async(Dispatchers.IO) {
                     buildSeason(imdbId, seasonNumber)
                 }
-            }.awaitAll()
+            }
+            try {
+                jobs.awaitAll()
+            } catch (ex: Exception) {
+                jobs.forEach{ it.cancel() }
+                throw ex
+            }
         }
 
         logger.info("Processed all $numberSeasons seasons!")
@@ -43,10 +51,8 @@ class SeasonService(
         val doc = fetchSeasonHtml(imdbId, seasonNumber)
 
         val numberEpisodesText = doc.getElementsByAttributeValue("itemprop", "numberofEpisodes").first()?.attr("content")
-            ?: throw raiseBuildingError("Could not find number of episodes text")
-
-        val numberEpisodes = numberEpisodesText.toIntOrNull()
-            ?: throw raiseBuildingError("Could not parse number of episodes. Input string was $numberEpisodesText")
+        val numberEpisodes = numberEpisodesText?.toIntOrNull()
+            ?: throw raiseBuildingError(generateParseErrorMessage("numberEpisodes", numberEpisodesText))
 
         val episodes = episodeService.getEpisodesOfSeason(doc, numberEpisodes)
 
@@ -70,12 +76,9 @@ class SeasonService(
         }
     }
 
-    private fun generateSeasonUrl(imdbId: String, seasonNumber: Int) : String
-        = "/title/$imdbId/episodes?season=$seasonNumber"
-
     private fun raiseBuildingError(message: String) : ErrorBuildingSeasonException {
         val errorMessage = "Error while building Season. $message"
         logger.error(errorMessage)
-        return ErrorBuildingSeasonException(message)
+        return ErrorBuildingSeasonException(errorMessage)
     }
 }
