@@ -1,11 +1,9 @@
 package com.diogo_portela.imdb_craper.helper
 
-import com.diogo_portela.imdb_craper.model.ApplicationLinkedData
-import com.diogo_portela.imdb_craper.model.Episode
-import com.diogo_portela.imdb_craper.model.Season
-import com.diogo_portela.imdb_craper.model.Series
+import com.diogo_portela.imdb_craper.model.*
 import java.time.Duration
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import kotlin.random.Random.Default.nextFloat
 import kotlin.random.Random.Default.nextInt
 import kotlin.random.Random.Default.nextLong
@@ -22,6 +20,36 @@ fun generateEpisode(
     summary: String = "My summary ${nextInt(1, 101)}"
 ) = Episode(
     imdbId = imdbId,
+    number = number,
+    name = name,
+    airdate = airdate,
+    ratingValue = ratingValue,
+    ratingCount = ratingCount,
+    summary = summary
+)
+
+fun generateEpisode(episodeElementData: EpisodeElementData) =
+    generateEpisode(
+        imdbId = episodeElementData.url!!.removePrefix("/title/").removeSuffix("/"),
+        number = episodeElementData.number!!.toInt(),
+        name = episodeElementData.name!!,
+        airdate = LocalDate.parse(episodeElementData.airdate!!, DateTimeFormatter.ofPattern("d MMM. yyyy")),
+        ratingValue = episodeElementData.ratingValue!!.toFloat(),
+        ratingCount = episodeElementData.ratingCount!!.toInt(),
+        summary = episodeElementData.summary!!
+    )
+
+fun generateEpisodeElementData(
+    url: String = "/title/${generateImdbId()}/",
+    number: String = nextInt(1, 25).toString(),
+    name: String = "My episode ${nextInt(1, 101)}",
+    airdate: String = LocalDate.of(nextInt(1960, 2021), nextInt(1, 13), nextInt(1, 29))
+        .format(DateTimeFormatter.ofPattern("d MMM. yyyy")),
+    ratingValue: String = (nextFloat() * 10).toString(),
+    ratingCount: String = nextInt(1, 1000001).toString(),
+    summary: String = "My summary ${nextInt(1, 101)}"
+) = EpisodeElementData(
+    url = url,
     number = number,
     name = name,
     airdate = airdate,
