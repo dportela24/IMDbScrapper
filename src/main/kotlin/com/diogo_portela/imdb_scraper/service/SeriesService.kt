@@ -1,6 +1,6 @@
 package com.diogo_portela.imdb_scraper.service
 
-import com.diogo_portela.imdb_scraper.helper.generateParseErrorMessage
+import com.diogo_portela.imdb_scraper.helper.generateErrorMessage
 import com.diogo_portela.imdb_scraper.helper.generateTitleUrl
 import com.diogo_portela.imdb_scraper.helper.matchGroupsInRegex
 import com.diogo_portela.imdb_scraper.model.ApplicationLinkedData
@@ -67,7 +67,7 @@ class SeriesService(
             ratingCount = linkedData.aggregateRating.ratingCount,
             ratingValue = linkedData.aggregateRating.ratingValue,
             posterURL = linkedData.image,
-            numberSeasons = numberSeasons,
+            numberSeasons = seasons.size,
             seasons = seasons
         )
     }
@@ -136,7 +136,7 @@ class SeriesService(
                 Pair(startYear, endYear)
             }
         } catch (_: Exception) {
-            throw raiseBuildingError(generateParseErrorMessage("runtime", input))
+            throw raiseBuildingError(generateErrorMessage("runtime", input))
         }
     }
 
@@ -144,7 +144,7 @@ class SeriesService(
         val groupValues = try {
             matchGroupsInRegex(input!!.replace(" ",""), "^(?!\$)(?:(\\d+)h)?(?:(\\d+)m)?")!!
         } catch (_:Exception) {
-            throw raiseBuildingError(generateParseErrorMessage("episodeDuration", input))
+            throw raiseBuildingError(generateErrorMessage("episodeDuration", input))
         }
 
         val hours = groupValues[1].toLongOrNull() ?: 0
@@ -163,7 +163,7 @@ class SeriesService(
         val numberSeasonsGroupValues = try {
             matchGroupsInRegex(input!!.lowercase(), "(\\d+) seasons?")!!
         } catch (_: Exception) {
-            throw raiseBuildingError(generateParseErrorMessage("numberSeasons", input))
+            throw raiseBuildingError(generateErrorMessage("numberSeasons", input))
         }
 
         return numberSeasonsGroupValues[1].toInt()

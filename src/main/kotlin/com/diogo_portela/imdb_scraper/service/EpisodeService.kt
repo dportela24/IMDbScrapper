@@ -1,6 +1,7 @@
 package com.diogo_portela.imdb_scraper.service
 
-import com.diogo_portela.imdb_scraper.helper.generateParseErrorMessage
+import com.diogo_portela.imdb_scraper.helper.generateErrorMessage
+import com.diogo_portela.imdb_scraper.helper.getParseDateFunctions
 import com.diogo_portela.imdb_scraper.helper.matchGroupsInRegex
 import com.diogo_portela.imdb_scraper.model.Episode
 import com.diogo_portela.imdb_scraper.model.exception.ErrorBuildingEpisodeException
@@ -14,8 +15,7 @@ import org.jsoup.nodes.Element
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import org.springframework.stereotype.Service
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import java.time.temporal.TemporalAccessor
 
 @Service
 class EpisodeService{
@@ -25,7 +25,7 @@ class EpisodeService{
         logger.info("Processing episodes")
 
         val episodesList = doc.getElementsByClass("list detail eplist").first()
-            ?: throw raiseBuildingError("Could not find episode list")
+            ?: throw raiseBuildingError(generateErrorMessage("episodeList"))
 
         val episodes = runBlocking(MDCContext()) {
             val jobs = episodesList.children().map { element ->
@@ -39,39 +39,34 @@ class EpisodeService{
                 jobs.forEach{ it.cancel() }
                 throw ex
             }
-        }
+        }.filterNotNull()
 
         logger.info("Processed $numberEpisodes episodes")
 
         return episodes.toSet()
     }
 
-    suspend fun buildEpisode(element: Element) : Episode {
-        val episodeNumberText = element.getElementsByAttributeValue("itemprop", "episodeNumber").first()?.attr("content")
-        val episodeNumber = episodeNumberText?.toIntOrNull()
-            ?: throw raiseBuildingError("Could not find episode number")
+    suspend fun buildEpisode(element: Element) : Episode? {
+        // Must exist fields
+        val episodeNumber = getEpisodeNumber(element)
 
         MDC.put("episode", episodeNumber.toString())
         logger.trace("Building episode")
 
         val nameAndUrlElement = element.getElementsByAttributeValue("itemprop", "name").first()
-            ?: throw raiseBuildingError("Could not find episode name and url element")
+            ?: throw raiseBuildingError(generateErrorMessage("nameAndUrl"))
 
         val name = nameAndUrlElement.text()
-        if (!validateNonParsedField(name)) throw raiseBuildingError("Episode name text was blank")
+        if (name.isBlank()) throw raiseBuildingError("Episode name text was blank")
 
-        val url = nameAndUrlElement.attr("href")
-        val imdbId = parseImdbId(url)
+        val imdbId = getImdbId(nameAndUrlElement)
 
-        val airdateText = element.getElementsByClass("airdate").first()?.text()
-        val airdate = parseAirdate(airdateText)
+        // Can be null fields
+        val airdate = getAirdate(element)
 
         val (ratingValue, ratingCount) = getRatingData(element)
 
-        val summaryText = element.getElementsByClass("item_description").first()
-            ?: throw raiseBuildingError("Could not find summary text element")
-        val summary = summaryText.text()
-        if (!validateNonParsedField(summary)) throw raiseBuildingError("Episode summary text was blank")
+        val summary = getSummary(element)
 
         return Episode(
             name = name,
@@ -84,47 +79,73 @@ class EpisodeService{
         )
     }
 
-    private fun validateNonParsedField(field: String) = field.isNotBlank()
+    private fun getEpisodeNumber(element: Element) : Int {
+        val episodeNumberText = element.getElementsByAttributeValue("itemprop", "episodeNumber").first()?.attr("content")
+            ?: throw raiseBuildingError(generateErrorMessage("episodeNumber"))
+        return episodeNumberText.toIntOrNull()
+            ?: throw raiseBuildingError(generateErrorMessage("episodeNumber", episodeNumberText))
+    }
 
-    private fun getRatingData(element: Element) : Pair<Float, Int> {
+    private fun parseRatingCount(input: String) : Int? =
+        input.removePrefix("(")
+            .removeSuffix(")")
+            .replace(",", "")
+            .toIntOrNull()
+
+    private fun getImdbId(element: Element) : String {
+        val url = element.attr("href")
+
+        val idGroupValues = matchGroupsInRegex(url, "/title/([a-zA-Z0-9]+)/(?:.+)?")
+            ?: throw raiseBuildingError(generateErrorMessage("episodeImdbId", url))
+
+        return idGroupValues[1]
+    }
+
+    private fun getAirdate(element: Element) : TemporalAccessor? {
+        val airdateText = element.getElementsByClass("airdate").first()?.text()
+            ?: throw raiseBuildingError(generateErrorMessage("airdate"))
+
+        return if (airdateText.isNotBlank()) parseAirdate(airdateText) else null
+    }
+
+    private fun parseAirdate(input: String) : TemporalAccessor {
+        val dateFormats = getParseDateFunctions()
+
+        dateFormats.forEach{ parseFunction ->
+            try {
+                return parseFunction(input)
+            } catch (_: Exception) {}
+        }
+
+        throw raiseBuildingError(generateErrorMessage("airdate", input))
+    }
+
+    private fun getRatingData(element: Element) : Pair<Float?, Int?> {
         val ratingValueText = element.getElementsByClass("ipl-rating-star__rating").first()?.text()
         val ratingCountText = element.getElementsByClass("ipl-rating-star__total-votes").first()?.text()
 
         val ratingValue = ratingValueText?.toFloatOrNull()
-            ?: throw raiseBuildingError(generateParseErrorMessage("ratingValue", ratingValueText))
+        val ratingCount = ratingCountText?.let { parseRatingCount(it) }
 
-        val ratingCount = parseRatingCount(ratingCountText)
-            ?: throw raiseBuildingError(generateParseErrorMessage("ratingCount", ratingCountText))
+        if (ratingValue == null && ratingCount != null) {
+            throw raiseBuildingError("Rating count exists but no rating value")
+        } else if (ratingCount == null && ratingValue != null) {
+            throw raiseBuildingError("Rating value exists but no rating count")
+        }
 
         return Pair(ratingValue, ratingCount)
     }
 
-    private fun parseRatingCount(input: String?) : Int? =
-        input?.removePrefix("(")
-            ?.removeSuffix(")")
-            ?.replace(",", "")
-            ?.toIntOrNull()
+    private fun getSummary(element: Element) : String? {
+        val summaryElement = element.getElementsByClass("item_description").first()
+            ?: throw raiseBuildingError(generateErrorMessage("summaryText"))
 
-
-    private fun parseAirdate(input: String?) : LocalDate {
-        val dateFormats = setOf("d MMM. yyyy", "d MMM yyyy")
-
-        dateFormats.forEach{ dateFormat ->
-            try {
-                val formatter = DateTimeFormatter.ofPattern(dateFormat)
-                return LocalDate.parse(input, formatter)
-
-            } catch (_: Exception) {}
+        // If links in summary -> No real summary only default IMDb text to submit one
+        return if (summaryElement.getElementsByTag("a").size == 0) {
+            summaryElement.text()
+        } else {
+            null
         }
-
-        throw raiseBuildingError(generateParseErrorMessage("airdate", input))
-    }
-
-    private fun parseImdbId(url: String) : String {
-        val idGroupValues = matchGroupsInRegex(url, "/title/([a-zA-Z0-9]+)/(?:.+)?")
-            ?: throw raiseBuildingError(generateParseErrorMessage("episodeImdbId", url))
-
-        return idGroupValues[1]
     }
 
     private fun raiseBuildingError(message: String) : ErrorBuildingEpisodeException {

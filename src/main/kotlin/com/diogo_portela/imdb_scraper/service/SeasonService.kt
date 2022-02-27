@@ -1,6 +1,6 @@
 package com.diogo_portela.imdb_scraper.service
 
-import com.diogo_portela.imdb_scraper.helper.generateParseErrorMessage
+import com.diogo_portela.imdb_scraper.helper.generateErrorMessage
 import com.diogo_portela.imdb_scraper.helper.generateSeasonUrl
 import com.diogo_portela.imdb_scraper.model.JSoupConnection
 import com.diogo_portela.imdb_scraper.model.Season
@@ -35,27 +35,27 @@ class SeasonService(
                 jobs.forEach{ it.cancel() }
                 throw ex
             }
-        }
+        }.filterNotNull()
 
         logger.info("Processed all $numberSeasons seasons!")
 
         return seasons.toSet()
     }
 
-    suspend fun buildSeason(imdbId: String, seasonNumber: Int) : Season {
+    suspend fun buildSeason(imdbId: String, seasonNumber: Int) : Season? {
         MDC.put("season", seasonNumber.toString())
 
         val doc = fetchSeasonHtml(imdbId, seasonNumber)
 
         val numberEpisodesText = doc.getElementsByAttributeValue("itemprop", "numberofEpisodes").first()?.attr("content")
         val numberEpisodes = numberEpisodesText?.toIntOrNull()
-            ?: throw raiseBuildingError(generateParseErrorMessage("numberEpisodes", numberEpisodesText))
+            ?: throw raiseBuildingError(generateErrorMessage("numberEpisodes", numberEpisodesText))
 
         val episodes = episodeService.getEpisodesOfSeason(doc, numberEpisodes)
 
         return Season(
             number = seasonNumber,
-            numberEpisodes = numberEpisodes,
+            numberEpisodes = episodes.size,
             episodes = episodes
         )
     }

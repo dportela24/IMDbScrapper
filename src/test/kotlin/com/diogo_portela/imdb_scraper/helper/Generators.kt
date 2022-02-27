@@ -4,6 +4,7 @@ import com.diogo_portela.imdb_scraper.model.*
 import java.time.Duration
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.time.temporal.TemporalAccessor
 import kotlin.random.Random.Default.nextFloat
 import kotlin.random.Random.Default.nextInt
 import kotlin.random.Random.Default.nextLong
@@ -14,10 +15,10 @@ fun generateEpisode(
     imdbId: String = generateImdbId(),
     number: Int = nextInt(1, 25),
     name: String = "My episode ${nextInt(1, 101)}",
-    airdate: LocalDate = LocalDate.of(nextInt(1960, 2021), nextInt(1, 13), nextInt(1, 29)),
-    ratingValue: Float = nextFloat() * 10,
-    ratingCount: Int = nextInt(1, 1000001),
-    summary: String = "My summary ${nextInt(1, 101)}"
+    airdate: TemporalAccessor? = LocalDate.of(nextInt(1960, 2021), nextInt(1, 13), nextInt(1, 29)),
+    ratingValue: Float? = nextFloat() * 10,
+    ratingCount: Int? = nextInt(1, 1000001),
+    summary: String? = "My summary ${nextInt(1, 101)}"
 ) = Episode(
     imdbId = imdbId,
     number = number,
@@ -30,16 +31,30 @@ fun generateEpisode(
 
 fun generateEpisode(
     episodeScrappedData: EpisodeScrappedData
-) =
-    generateEpisode(
+) : Episode {
+    val summary = if (episodeScrappedData.summary != NO_SUMMARY_PLACEHOLDER) {
+        episodeScrappedData.summary
+    } else null
+
+    val airdate = episodeScrappedData.airdate?.let { input ->
+        val dateFormats = getParseDateFunctions()
+        dateFormats.forEach{ parseFunction ->
+            try {
+                return@let parseFunction(input)
+            } catch (_: Exception) {}
+        }
+        null
+    }
+    return generateEpisode(
         imdbId = episodeScrappedData.url!!.removePrefix("/title/").removeSuffix("/"),
         number = episodeScrappedData.number!!.toInt(),
         name = episodeScrappedData.name!!,
-        airdate = LocalDate.parse(episodeScrappedData.airdate!!, DateTimeFormatter.ofPattern("d MMM. yyyy")),
-        ratingValue = episodeScrappedData.ratingValue!!.toFloat(),
-        ratingCount = episodeScrappedData.ratingCount!!.toInt(),
-        summary = episodeScrappedData.summary!!
+        airdate = airdate,
+        ratingValue = episodeScrappedData.ratingValue?.toFloat(),
+        ratingCount = episodeScrappedData.ratingCount?.toInt(),
+        summary = summary
     )
+}
 
 fun generateEpisodeScrappedData(
     url: String = "/title/${generateImdbId()}/",
@@ -47,8 +62,8 @@ fun generateEpisodeScrappedData(
     name: String = "My episode ${nextInt(1, 101)}",
     airdate: String = LocalDate.of(nextInt(1960, 2021), nextInt(1, 13), nextInt(1, 29))
         .format(DateTimeFormatter.ofPattern("d MMM. yyyy")),
-    ratingValue: String = (nextFloat() * 10).toString(),
-    ratingCount: String = nextInt(1, 1000001).toString(),
+    ratingValue: String? = (nextFloat() * 10).toString(),
+    ratingCount: String? = nextInt(1, 1000001).toString(),
     summary: String = "My summary ${nextInt(1, 101)}"
 ) = EpisodeScrappedData(
     url = url,
