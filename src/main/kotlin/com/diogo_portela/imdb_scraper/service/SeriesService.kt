@@ -10,10 +10,13 @@ import com.diogo_portela.imdb_scraper.model.exception.ErrorBuildingSeriesExcepti
 import com.diogo_portela.imdb_scraper.model.exception.JSoupConnectionException
 import com.diogo_portela.imdb_scraper.model.exception.NotATvSeriesException
 import org.jsoup.nodes.Document
+import org.jsoup.nodes.Element
+import org.jsoup.select.Elements
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import org.springframework.stereotype.Service
 import java.time.Duration
+import javax.print.Doc
 
 @Service
 class SeriesService(
@@ -33,25 +36,17 @@ class SeriesService(
 
         val doc = fetchSeriesHtml(imdbId)
 
-        val linkedDataJson = doc.getElementsByAttributeValueStarting("type", "application/ld+json").first()?.data()
-            ?: throw raiseBuildingError("Could not find LinkedData element.")
-
-        val linkedData = getLinkedData(linkedDataJson)
+        val linkedData = getLinkedData(doc)
 
         validateTitleType(imdbId, linkedData.type)
 
         val (name, originalName) = getSeriesName(linkedData)
 
-        val undertitleElements = getUndertitleElements(doc)
+        val (startYear, endYear) = getRuntime(doc)
 
-        val runtimeText = undertitleElements[1]?.children()?.last()?.text()
-        val (startYear, endYear) = parseStartAndEndYear(runtimeText)
+        val episodeDuration = getEpisodeDuration(doc)
 
-        val episodeDurationText = undertitleElements.last()?.text()
-        val episodeDuration = parseDurationFromString(episodeDurationText)
-
-        val numberSeasonsText = getNumberSeasonsElement(doc)
-        val numberSeasons = parseNumberSeasons(numberSeasonsText)
+        val numberSeasons = getNumberSeasons(doc)
 
         val seasons = seasonService.getSeasonsOfSeries(imdbId, numberSeasons)
 
@@ -64,8 +59,8 @@ class SeriesService(
             endYear = endYear,
             episodeDuration = episodeDuration,
             genres = linkedData.genre.toSet(),
-            ratingCount = linkedData.aggregateRating.ratingCount,
-            ratingValue = linkedData.aggregateRating.ratingValue,
+            ratingCount = linkedData.aggregateRating?.ratingCount,
+            ratingValue = linkedData.aggregateRating?.ratingValue,
             posterURL = linkedData.image,
             numberSeasons = seasons.size,
             seasons = seasons
@@ -99,9 +94,12 @@ class SeriesService(
         }
     }
 
-    private fun getLinkedData(json: String) : ApplicationLinkedData {
+    private fun getLinkedData(doc: Document) : ApplicationLinkedData {
+        val linkedDataJson = doc.getElementsByAttributeValueStarting("type", "application/ld+json").first()?.data()
+            ?: throw raiseBuildingError(generateErrorMessage("linkedData"))
+
         return try {
-            ApplicationLinkedData.fromJSON(json)
+            ApplicationLinkedData.fromJSON(linkedDataJson)
         } catch (ex: Exception) {
             throw raiseBuildingError("An error occurred while deserializing the linkedData element. " + ex.message)
         }
@@ -115,9 +113,15 @@ class SeriesService(
         }
     }
 
-    private fun getUndertitleElements(doc: Document) =
-        doc.getElementsByAttributeValueStarting("data-testid", "hero-title-block__metadata").first()?.children()
-            ?: throw raiseBuildingError("Could not find undertitle elements")
+    private fun getRuntime(doc: Document) : Pair<Int, Int?> {
+        val undertitleElements = doc.getElementsByAttributeValueStarting("data-testid", "hero-title-block__metadata").first()?.children()
+            ?: throw raiseBuildingError(generateErrorMessage("underTitle"))
+
+        val runtimeText = undertitleElements[1]?.children()?.last()?.text()
+            ?: throw raiseBuildingError(generateErrorMessage("runtime"))
+
+        return parseStartAndEndYear(runtimeText)
+    }
 
     private fun parseStartAndEndYear(input: String?) : Pair<Int, Int?> {
         return try {
@@ -140,9 +144,16 @@ class SeriesService(
         }
     }
 
+    private fun getEpisodeDuration(doc: Document) : Duration? {
+        val episodeDurationElement = doc.getElementsByAttributeValueStarting("data-testid", "title-techspec_runtime").first()
+        val episodeDurationText = episodeDurationElement?.child(1)?.text()
+
+        return episodeDurationText?.let { parseDurationFromString(it) }
+    }
+
     private fun parseDurationFromString(input: String?) : Duration {
         val groupValues = try {
-            matchGroupsInRegex(input!!.replace(" ",""), "^(?!\$)(?:(\\d+)h)?(?:(\\d+)m)?")!!
+            matchGroupsInRegex(input!!.replace(" ",""), "^(?!\$)(?:(\\d+)hours?)?(?:(\\d+)minutes)?")!!
         } catch (_:Exception) {
             throw raiseBuildingError(generateErrorMessage("episodeDuration", input))
         }
@@ -153,11 +164,16 @@ class SeriesService(
         return Duration.ofHours(hours).plusMinutes(minutes)
     }
 
-    private fun getNumberSeasonsElement(doc: Document) =
-        doc.getElementsByAttributeValueStarting("for", "browse-episodes-season").first()?.text() // For multiple seasons
+    private fun getNumberSeasons(doc: Document) : Int {
+        val numberSeasonsText = doc.getElementsByAttributeValueStarting("for", "browse-episodes-season").first()?.text() // For multiple seasons
             ?: run{
-                doc.getElementsByAttributeValueStarting("class", "BrowseEpisodes__BrowseLinksContainer").first()?.child(1)?.text() // For single seasons
+                doc.getElementsByAttributeValueStarting("class", "BrowseEpisodes__BrowseLinksContainer").first() // For single seasons
+                    ?.getElementsByAttributeValueContaining("href", "season")?.text()
             }
+            ?: throw raiseBuildingError(generateErrorMessage("numberSeasons"))
+
+        return parseNumberSeasons(numberSeasonsText)
+    }
 
     private fun parseNumberSeasons(input: String?) : Int {
         val numberSeasonsGroupValues = try {

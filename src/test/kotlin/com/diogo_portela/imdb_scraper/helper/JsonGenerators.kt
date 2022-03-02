@@ -7,24 +7,30 @@ fun generateApplicationLinkedDataJson(
     type: String = "TVSeries",
     name: String = "My TV Show",
     alternateName: String? = null,
-    image: String = "http://myposter.com",
-    description: String = "A simple TV Show",
-    aggregateRating: ApplicationLinkedData.AggregateRating = generateAggregasteRating(),
+    image: String? = "http://myposter.com",
+    description: String? = "A simple TV Show",
+    aggregateRating: ApplicationLinkedData.AggregateRating? = generateAggregasteRating(),
     genre: Set<String> = setOf("Comedy", "Drama", "Romance")
 ) = jacksonObjectMapper().writeValueAsString(
     mutableMapOf(
         "@type" to type,
         "name" to name,
-        "image" to image,
-        "description" to description,
-        "aggregateRating" to mapOf(
-            "ratingCount" to aggregateRating.ratingCount,
-            "ratingValue" to aggregateRating.ratingValue
-        ),
         "genre" to genre
     ).also { map ->
         alternateName?.run {
             map["alternateName"] = this
+        }
+        aggregateRating?.run {
+            map["aggregateRating"] = mapOf(
+                "ratingCount" to this.ratingCount,
+                "ratingValue" to this.ratingValue
+            )
+        }
+        image?.run {
+            map["image"] = this
+        }
+        description?.run {
+            map["description"] = this
         }
     }
 )
@@ -35,16 +41,22 @@ fun generateApplicationLinkedDataJson(
     mutableMapOf(
         "@type" to linkedData.type,
         "name" to linkedData.name,
-        "image" to linkedData.image,
-        "description" to linkedData.description,
-        "aggregateRating" to mapOf(
-            "ratingCount" to linkedData.aggregateRating.ratingCount,
-            "ratingValue" to linkedData.aggregateRating.ratingValue
-        ),
         "genre" to linkedData.genre
     ).also { map ->
         linkedData.alternateName?.run {
             map["alternateName"] = this
+        }
+        linkedData.aggregateRating?.run {
+            map["aggregateRating"] = mapOf(
+                "ratingCount" to this.ratingCount,
+                "ratingValue" to this.ratingValue
+            )
+        }
+        linkedData.image?.run {
+            map["image"] = this
+        }
+        linkedData.description?.run {
+            map["description"] = this
         }
     }
 )

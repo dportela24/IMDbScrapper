@@ -21,8 +21,12 @@ fun generateSeasonUrl(imdbId: String, seasonNumber: Int) : String
     = "/title/$imdbId/episodes?season=$seasonNumber"
 
 fun generateErrorMessage(field: String, input: String? = null) : String {
-    return input?.run { "Could not parse $field. Input string was $input. " }
-            ?: "Could not find $field element"
+    return input?.run {
+        if (this.isBlank())
+            "Could not parse $field. Input string was empty."
+        else
+            "Could not parse $field. Input string was $this. " }
+        ?: "Could not find $field element."
 }
 
 fun getParseDateFunctions() : Set<(String) -> TemporalAccessor> = setOf(

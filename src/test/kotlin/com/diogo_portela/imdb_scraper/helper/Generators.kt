@@ -103,14 +103,14 @@ fun generateSeries(
     imdbId: String = generateImdbId(),
     name: String = "My series ${nextInt(1, 101)}",
     originalName: String? = null,
-    summary: String = "My summary ${nextInt(1, 101)}",
-    episodeDuration: Duration = Duration.ofMinutes(nextLong(20, 90)),
+    summary: String? = "My summary ${nextInt(1, 101)}",
+    episodeDuration: Duration? = Duration.ofMinutes(nextLong(20, 90)),
     startYear: Int = nextInt(1960, 2020),
     endYear: Int? = null,
     genres: Set<String> = setOf("Comedy", "Drama", "Romance"),
-    ratingValue: Float = nextFloat() * 10,
-    ratingCount: Int = nextInt(1, 1000001),
-    posterURL: String = "My poster ${nextInt(1, 101)}",
+    ratingValue: Float? = nextFloat() * 10,
+    ratingCount: Int? = nextInt(1, 1000001),
+    posterURL: String? = "My poster ${nextInt(1, 101)}",
     numberSeasons: Int = nextInt(1, 4),
     seasons: Set<Season> = (1..numberSeasons).map { generateSeason() }.toSet()
 ) = Series(
@@ -146,10 +146,11 @@ fun generateSeries(
         Pair(year, year)
     }
 
-    val durationGroups = matchGroupsInRegex(seriesScrappedData.episodeDuration!!.replace(" ", ""), "(?:(\\d+)h)?(?:(\\d+)m)?")!!
-    val episodeDuration = Duration
+    val durationGroups = seriesScrappedData.episodeDuration?.let{ matchGroupsInRegex(it.replace(" ", ""), "^(?!\$)(?:(\\d+)hours?)?(?:(\\d+)minutes)?")}
+    val episodeDuration = durationGroups?.let { Duration
         .ofHours(durationGroups[1].toLongOrNull() ?: 0)
         .plusMinutes(durationGroups[2].toLongOrNull() ?: 0)
+    }
 
     val numberSeasons = seriesScrappedData.numberSeasons!!
         .replace(" Seasons", "")
@@ -165,8 +166,8 @@ fun generateSeries(
         startYear = startYear,
         endYear = endYear,
         genres = linkedData.genre,
-        ratingValue = linkedData.aggregateRating.ratingValue,
-        ratingCount = linkedData.aggregateRating.ratingCount,
+        ratingValue = linkedData.aggregateRating?.ratingValue,
+        ratingCount = linkedData.aggregateRating?.ratingCount,
         posterURL = linkedData.image,
         numberSeasons = numberSeasons,
         seasons = (1..numberSeasons).map { generateSeason(it) }.toSet()
@@ -176,8 +177,8 @@ fun generateSeries(
 fun generateSeriesScrappedData(
     linkedData : String? = generateApplicationLinkedDataJson(),
     runtime: String? = "${nextInt(1960, 2000)}–${nextInt(2001, 2019)}",
-    episodeDuration: String? = "${nextInt(1, 3)}h ${nextInt(1,60)}m",
-    numberSeasons: String? = "${nextInt(1, 5)} Seasons"
+    episodeDuration: String? = "${nextInt(1, 3)} hours ${nextInt(1,60)} minutes",
+    numberSeasons: String? = "${nextInt(2, 5)} Seasons"
 ) = SeriesScrappedData(
     linkedData = linkedData,
     runtime = runtime,

@@ -11,9 +11,9 @@ data class ApplicationLinkedData (
     val type: String,
     val name: String,
     val alternateName: String?,
-    val image: String,
-    val description: String,
-    val aggregateRating: AggregateRating,
+    val image: String?,
+    val description: String?,
+    val aggregateRating: AggregateRating?,
     val genre: Set<String>
 ){
     @JsonIgnoreProperties(ignoreUnknown = true)

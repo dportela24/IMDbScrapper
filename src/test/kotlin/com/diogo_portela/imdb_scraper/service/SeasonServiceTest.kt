@@ -132,7 +132,7 @@ class SeasonServiceTest {
         val numberSeasons = 2
         val seasonWithErrorNumber = 2
         val (seasonsElementData, seasons) = setupSeasons(numberSeasons)
-        val expectedExceptionMessage = "Could not find numberEpisodes text element"
+        val expectedExceptionMessage = "Could not find numberEpisodes element"
 
         setupMocks(seasonsElementData, seasons.map { it.episodes })
         every { seasonDocs[seasonWithErrorNumber - 1].getElementsByAttributeValue("itemprop", "numberofEpisodes").first() } returns null
