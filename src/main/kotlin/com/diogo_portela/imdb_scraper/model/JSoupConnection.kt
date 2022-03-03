@@ -20,7 +20,9 @@ class JSoupConnection (
     fun newConnection(path: String) = Jsoup
         .newSession()
         .url(baseURL + path)
+        .timeout(10000)
         .headers(headers)
+        .ignoreHttpErrors(true)
         .also { conn ->
             userAgent?.apply { conn.userAgent(this) }
         }

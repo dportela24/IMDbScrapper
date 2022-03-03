@@ -1,7 +1,6 @@
 package com.diogo_portela.imdb_scraper.advice
 
 import com.diogo_portela.imdb_scraper.model.ErrorDetails
-import com.diogo_portela.imdb_scraper.model.ErrorDetails.ErrorCode
 import com.diogo_portela.imdb_scraper.model.exception.*
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -14,7 +13,7 @@ class GlobalExceptionHandler {
     @ExceptionHandler(value = [NotATvSeriesException::class])
     fun handleNotATvSeriesException(req: HttpServletRequest, ex: NotATvSeriesException) : ResponseEntity<ErrorDetails> {
         val errorDetails = ErrorDetails(
-            ErrorCode.NOT_A_TV_SERIES_ERROR,
+            ErrorDetails.ErrorCode.NOT_A_TV_SERIES_ERROR,
             "Title type not valid.",
             ex.message
         )
@@ -25,9 +24,9 @@ class GlobalExceptionHandler {
     @ExceptionHandler(value = [JSoupConnectionException::class])
     fun handleJSoupConnectionException(req: HttpServletRequest, ex: NotATvSeriesException) : ResponseEntity<ErrorDetails> {
         val errorDetails = ErrorDetails(
-            ErrorCode.CONNECTION_ERROR,
+            ErrorDetails.ErrorCode.CONNECTION_ERROR,
             "Connection Error",
-            "Could not retrieve title information"
+            "Could not retrieve title HTML information"
         )
 
         return ResponseEntity(errorDetails, HttpStatus.BAD_GATEWAY)
@@ -39,11 +38,33 @@ class GlobalExceptionHandler {
     ])
     fun handleErrorBuildingException(req: HttpServletRequest, ex: BuildingErrorException) : ResponseEntity<ErrorDetails> {
         val errorDetails = ErrorDetails(
-            ErrorCode.BUILDING_ERROR,
+            ErrorDetails.ErrorCode.BUILDING_ERROR,
             "Building Error",
             "A problem occurred consolidating the series data."
         )
 
         return ResponseEntity(errorDetails, HttpStatus.SERVICE_UNAVAILABLE)
+    }
+
+    @ExceptionHandler(value = [InvalidImdbIdException::class])
+    fun handleInvalidIMDbId(req: HttpServletRequest, ex: InvalidImdbIdException) : ResponseEntity<ErrorDetails> {
+        val errorDetails = ErrorDetails(
+            ErrorDetails.ErrorCode.INVALID_IMDB_ID,
+            "Invalid IMDb Id",
+            ex.message
+        )
+
+        return ResponseEntity(errorDetails, HttpStatus.BAD_REQUEST)
+    }
+
+    @ExceptionHandler(value = [TVSeriesNotFoundException::class])
+    fun handleTVSeriesNotFound(req: HttpServletRequest, ex: TVSeriesNotFoundException) : ResponseEntity<ErrorDetails> {
+        val errorDetails = ErrorDetails(
+            ErrorDetails.ErrorCode.INVALID_IMDB_ID,
+            "TV Series not found",
+            ex.message
+        )
+
+        return ResponseEntity(errorDetails, HttpStatus.NOT_FOUND)
     }
 }

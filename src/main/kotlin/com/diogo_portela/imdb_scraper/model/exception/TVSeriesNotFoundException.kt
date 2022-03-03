@@ -1,6 +1,5 @@
 package com.diogo_portela.imdb_scraper.model.exception
 
-class JSoupConnectionException(
+class TVSeriesNotFoundException (
     override val message: String
-) : RuntimeException(message) {
-}
+) : RuntimeException(message)

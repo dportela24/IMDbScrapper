@@ -9,7 +9,7 @@ import kotlin.random.Random.Default.nextFloat
 import kotlin.random.Random.Default.nextInt
 import kotlin.random.Random.Default.nextLong
 
-fun generateImdbId() = "tt" + nextInt(1000000, 9999999)
+fun generateImdbId() = "tt" + nextInt(10000000, 99999999)
 
 fun generateEpisode(
     imdbId: String = generateImdbId(),

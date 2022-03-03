@@ -19,7 +19,7 @@ class Scrap(
 ) {
     val logger = LoggerFactory.getLogger(this::class.java)
 
-    @GetMapping("/title/id/{imdbId}")
+    @GetMapping("/id/{imdbId}")
     fun scrapTitleById(@PathVariable imdbId: String) : ResponseEntity<Series> {
         MDC.put("request_id", UUID.randomUUID().toString())
         logger.info("Received request for $imdbId")

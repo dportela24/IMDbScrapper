@@ -9,6 +9,7 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import org.jsoup.Connection
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
@@ -19,8 +20,9 @@ import java.time.Duration
 
 class SeriesServiceTest {
     val jSoupConnection = mockk<JSoupConnection>()
-    val seasonService = mockk<SeasonService>()
+    val jSoupResponse = mockk<Connection.Response>()
     val doc = mockk<Document>()
+    val seasonService = mockk<SeasonService>()
 
     val subject = SeriesService(jSoupConnection, seasonService)
 
@@ -30,7 +32,9 @@ class SeriesServiceTest {
     val numberSeasonsElement = mockk<Element>()
 
     fun setupMocks(seriesData: SeriesScrappedData, seasons: Set<Season> = emptySet()) {
-        every { jSoupConnection.newConnection(any()).get() } returns doc
+        every { jSoupConnection.newConnection(any()).execute()} returns jSoupResponse
+        every { jSoupResponse.statusCode()} returns 200
+        every { jSoupResponse.parse() } returns doc
         every { doc.getElementsByAttributeValueStarting("type", "application/ld+json").first() } returns linkedDataElement
         every { doc.getElementsByAttributeValueStarting("data-testid", "hero-title-block__metadata").first()?.children() } returns undertitleElements
         every { doc.getElementsByAttributeValueStarting("data-testid", "title-techspec_runtime").first() } returns episodeDurationElement
@@ -53,7 +57,8 @@ class SeriesServiceTest {
     }
 
     fun verifyMocks() {
-        verify(exactly = 1) { jSoupConnection.newConnection(any()).get() }
+        verify(exactly = 1) { jSoupConnection.newConnection(any()).execute() }
+        verify(exactly = 1) { jSoupResponse.parse() }
         verify(exactly = 1) { linkedDataElement.data() }
         verify(exactly = 1) { undertitleElements[1]?.children()?.last()?.text() }
         verify(exactly = 1) { episodeDurationElement.child(1).text() }
@@ -307,20 +312,57 @@ class SeriesServiceTest {
     }
 
     @Test
-    fun `Connection - If could not retrieve HTML throws JSoupConnectionException`() {
+    fun `IMDb Id - If IMDb Id is not valid throws InvalidImdbIDException`() {
+        val imdbId = "An invalid IMDb id"
+        val expectedErrorMessage = "Requested $imdbId is not a valid IMDb id"
+
+        val ex = assertThrows<InvalidImdbIdException> { subject.scrapTitle(imdbId) }
+
+        assertTrue(ex.message.contains(expectedErrorMessage))
+    }
+
+    @Test
+    fun `Connection - If could not retrieve IMDb response throws JSoupConnectionException`() {
         val imdbId = generateImdbId()
         val seriesData = generateSeriesScrappedData()
         val connectionErrorMessage = "Could not fetch HTML."
         val expectedErrorMessage = "Could not retrieve Series HTML."
 
         setupMocks(seriesData)
-
-        every { jSoupConnection.newConnection(any()).get() } throws JSoupConnectionException(connectionErrorMessage)
+        every { jSoupConnection.newConnection(any()).execute() } throws RuntimeException(connectionErrorMessage)
 
         val ex = assertThrows<JSoupConnectionException> { subject.scrapTitle(imdbId) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
         assertTrue(ex.message.contains(connectionErrorMessage))
+    }
+
+    @Test
+    fun `Connection - If IMDb response has unexpected error code throws JSoupConnectionException`() {
+        val imdbId = generateImdbId()
+        val seriesData = generateSeriesScrappedData()
+        val expectedErrorMessage = "Unexpected response from IMDb."
+
+        setupMocks(seriesData)
+        every { jSoupResponse.statusCode() } returns 500
+
+        val ex = assertThrows<JSoupConnectionException> { subject.scrapTitle(imdbId) }
+
+        assertTrue(ex.message.contains(expectedErrorMessage))
+    }
+
+    @Test
+    fun `Connection - If IMDb response has 404 status code throws TVSeriesNotFoundException`() {
+        val imdbId = generateImdbId()
+        val seriesData = generateSeriesScrappedData()
+        val expectedErrorMessage = "Could not found TV Series with Id $imdbId"
+
+        setupMocks(seriesData)
+        every { jSoupResponse.statusCode() } returns 404
+
+        val ex = assertThrows<TVSeriesNotFoundException> { subject.scrapTitle(imdbId) }
+
+        assertTrue(ex.message.contains(expectedErrorMessage))
     }
 
     @Test
@@ -351,7 +393,7 @@ class SeriesServiceTest {
     }
 
     @Test
-    fun `Type - If title not a TV Series throws NotATVSeriesException`() {
+    fun `Title type - If title not a TV Series throws NotATVSeriesException`() {
         val imdbId = generateImdbId()
         val wrongTitleType = "Movie"
         val seriesData = generateSeriesScrappedData(linkedData = generateApplicationLinkedDataJson(type = wrongTitleType))

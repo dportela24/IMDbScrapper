@@ -6,17 +6,13 @@ import com.diogo_portela.imdb_scraper.helper.matchGroupsInRegex
 import com.diogo_portela.imdb_scraper.model.ApplicationLinkedData
 import com.diogo_portela.imdb_scraper.model.JSoupConnection
 import com.diogo_portela.imdb_scraper.model.Series
-import com.diogo_portela.imdb_scraper.model.exception.ErrorBuildingSeriesException
-import com.diogo_portela.imdb_scraper.model.exception.JSoupConnectionException
-import com.diogo_portela.imdb_scraper.model.exception.NotATvSeriesException
+import com.diogo_portela.imdb_scraper.model.exception.*
+import org.jsoup.Connection
 import org.jsoup.nodes.Document
-import org.jsoup.nodes.Element
-import org.jsoup.select.Elements
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import org.springframework.stereotype.Service
 import java.time.Duration
-import javax.print.Doc
 
 @Service
 class SeriesService(
@@ -27,6 +23,8 @@ class SeriesService(
 
     fun scrapTitle(imdbId: String) : Series {
         MDC.put("imdb_id", imdbId)
+
+        if (!validateImdbId(imdbId)) throw InvalidImdbIdException("Requested $imdbId is not a valid IMDb id")
 
         return buildSeries(imdbId)
     }
@@ -73,16 +71,32 @@ class SeriesService(
         return ErrorBuildingSeriesException(message)
     }
 
+    private fun validateImdbId(imdbId: String) = Regex("^tt\\d{7,8}\$").matches(imdbId)
+
     private fun fetchSeriesHtml(imdbId: String) : Document {
-        return try {
+        val response = try {
             logger.trace("Making request for series data")
             jSoupConnection
                 .newConnection(generateTitleUrl(imdbId))
-                .get()
+                .execute()
         } catch (ex: Exception) {
             val errorMessage = "Could not retrieve Series HTML. ${ex.message}"
             logger.error(errorMessage)
             throw JSoupConnectionException(errorMessage)
+        }
+
+        validateJSoupResponse(imdbId, response)
+
+        return response.parse()
+    }
+
+    private fun validateJSoupResponse(imdbId: String, response: Connection.Response) {
+        when (response.statusCode()) {
+            404 -> throw TVSeriesNotFoundException("Could not found TV Series with Id $imdbId")
+            !in 200..299 -> {
+                logger.warn("Received unexpected ${response.statusCode()} response status code.")
+                throw JSoupConnectionException("Unexpected response from IMDb.")
+            }
         }
     }
 
