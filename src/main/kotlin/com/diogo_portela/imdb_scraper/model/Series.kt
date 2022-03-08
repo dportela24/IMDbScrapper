@@ -1,5 +1,6 @@
 package com.diogo_portela.imdb_scraper.model
 
+import com.fasterxml.jackson.annotation.JsonFormat
 import java.time.Duration
 
 data class Series (

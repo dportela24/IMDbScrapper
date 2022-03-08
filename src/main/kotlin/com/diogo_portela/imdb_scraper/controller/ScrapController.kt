@@ -13,9 +13,8 @@ import java.util.UUID
 
 @RestController
 @RequestMapping("scrap")
-class Scrap(
+class ScrapController(
     val seriesService: SeriesService
-    //val seasonService: SeasonService
 ) {
     val logger = LoggerFactory.getLogger(this::class.java)
 

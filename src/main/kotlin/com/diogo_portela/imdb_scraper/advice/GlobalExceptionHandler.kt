@@ -22,7 +22,7 @@ class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(value = [JSoupConnectionException::class])
-    fun handleJSoupConnectionException(req: HttpServletRequest, ex: NotATvSeriesException) : ResponseEntity<ErrorDetails> {
+    fun handleJSoupConnectionException(req: HttpServletRequest, ex: JSoupConnectionException) : ResponseEntity<ErrorDetails> {
         val errorDetails = ErrorDetails(
             ErrorDetails.ErrorCode.CONNECTION_ERROR,
             "Connection Error",
@@ -60,9 +60,21 @@ class GlobalExceptionHandler {
     @ExceptionHandler(value = [TVSeriesNotFoundException::class])
     fun handleTVSeriesNotFound(req: HttpServletRequest, ex: TVSeriesNotFoundException) : ResponseEntity<ErrorDetails> {
         val errorDetails = ErrorDetails(
-            ErrorDetails.ErrorCode.INVALID_IMDB_ID,
+            ErrorDetails.ErrorCode.TV_SERIES_NOT_FOUND,
             "TV Series not found",
             ex.message
+        )
+
+        return ResponseEntity(errorDetails, HttpStatus.NOT_FOUND)
+    }
+
+    @ExceptionHandler(value = [RuntimeException::class])
+    fun handleUnknownError(req: HttpServletRequest, ex: RuntimeException) : ResponseEntity<ErrorDetails> {
+        val errorDetails = ErrorDetails(
+            ErrorDetails.ErrorCode.UNEXPECTED_ERROR,
+            "Unexpected Error",
+            "An unexpected error occurred processing the request..."
+
         )
 
         return ResponseEntity(errorDetails, HttpStatus.NOT_FOUND)
