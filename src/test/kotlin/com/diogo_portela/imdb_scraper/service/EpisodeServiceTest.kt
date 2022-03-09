@@ -154,7 +154,6 @@ class EpisodeServiceTest {
     @Test
     fun `Happy path - Airdate - Episodes with only month and year`(){
         val episodeData = generateEpisodeScrappedData(airdate = "Aug 2014")
-        val expectedAirdate = YearMonth.of(2014, Month.AUGUST)
         val expectedEpisode = generateEpisode(episodeData)
 
         setupMocks(setOf(episodeData))
