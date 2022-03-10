@@ -3,7 +3,7 @@ package com.diogo_portela.imdb_scraper.service
 import com.diogo_portela.imdb_scraper.helper.generateErrorMessage
 import com.diogo_portela.imdb_scraper.helper.generateTitleUrl
 import com.diogo_portela.imdb_scraper.helper.matchGroupsInRegex
-import com.diogo_portela.imdb_scraper.model.ApplicationLinkedData
+import com.diogo_portela.imdb_scraper.model.TitleApplicationLinkedData
 import com.diogo_portela.imdb_scraper.model.JSoupConnection
 import com.diogo_portela.imdb_scraper.model.Series
 import com.diogo_portela.imdb_scraper.model.exception.*
@@ -108,18 +108,18 @@ class SeriesService(
         }
     }
 
-    private fun getLinkedData(doc: Document) : ApplicationLinkedData {
+    private fun getLinkedData(doc: Document) : TitleApplicationLinkedData {
         val linkedDataJson = doc.getElementsByAttributeValueStarting("type", "application/ld+json").first()?.data()
             ?: throw raiseBuildingError(generateErrorMessage("linkedData"))
 
         return try {
-            ApplicationLinkedData.fromJSON(linkedDataJson)
+            TitleApplicationLinkedData.fromJSON(linkedDataJson)
         } catch (ex: Exception) {
             throw raiseBuildingError("An error occurred while deserializing the linkedData element. " + ex.message)
         }
     }
 
-    private fun getSeriesName(linkedData: ApplicationLinkedData) : Pair<String, String?> {
+    private fun getSeriesName(linkedData: TitleApplicationLinkedData) : Pair<String, String?> {
         return linkedData.alternateName?.run {
             Pair(linkedData.alternateName, linkedData.name)
         } ?: run {

@@ -68,15 +68,25 @@ class GlobalExceptionHandler {
         return ResponseEntity(errorDetails, HttpStatus.NOT_FOUND)
     }
 
-    @ExceptionHandler(value = [RuntimeException::class])
+    //@ExceptionHandler(value = [RuntimeException::class])
     fun handleUnknownError(req: HttpServletRequest, ex: RuntimeException) : ResponseEntity<ErrorDetails> {
         val errorDetails = ErrorDetails(
             ErrorDetails.ErrorCode.UNEXPECTED_ERROR,
             "Unexpected Error",
             "An unexpected error occurred processing the request..."
-
         )
 
         return ResponseEntity(errorDetails, HttpStatus.NOT_FOUND)
+    }
+
+    @ExceptionHandler(value = [MissingParametersException::class])
+    fun handleUnknownError(req: HttpServletRequest, ex: MissingParametersException) : ResponseEntity<ErrorDetails> {
+        val errorDetails = ErrorDetails(
+            ErrorDetails.ErrorCode.MISSING_PARAMETERS,
+            "Missing required parameters",
+            ex.message
+        )
+
+        return ResponseEntity(errorDetails, HttpStatus.BAD_REQUEST)
     }
 }

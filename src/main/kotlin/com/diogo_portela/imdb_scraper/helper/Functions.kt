@@ -17,8 +17,11 @@ fun matchGroupsInRegex(input: String, pattern: String) : List<String>? {
 
 fun generateTitleUrl(imdbId: String) = "/title/$imdbId/"
 
-fun generateSeasonUrl(imdbId: String, seasonNumber: Int) : String
-    = "/title/$imdbId/episodes?season=$seasonNumber"
+fun generateSeasonUrl(imdbId: String, seasonNumber: Int) =
+    "/title/$imdbId/episodes?season=$seasonNumber"
+
+fun generateSearchUrl(name: String) : String
+    = "/search/title/?title=$name&title_type=tv_series"
 
 fun generateErrorMessage(field: String, input: String? = null) : String {
     return input?.run {

@@ -6,7 +6,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-data class ApplicationLinkedData (
+data class TitleApplicationLinkedData (
     @JsonProperty("@type")
     val type: String,
     val name: String,
@@ -23,7 +23,7 @@ data class ApplicationLinkedData (
     )
 
     companion object {
-        fun fromJSON(json: String) : ApplicationLinkedData =
+        fun fromJSON(json: String) : TitleApplicationLinkedData =
                 jacksonObjectMapper().readValue(json)
     }
 }

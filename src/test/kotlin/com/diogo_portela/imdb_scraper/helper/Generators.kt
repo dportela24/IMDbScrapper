@@ -133,7 +133,7 @@ fun generateSeries(
     imdbId: String = generateImdbId(),
     seriesScrappedData: SeriesScrappedData
 ) : Series {
-    val linkedData = ApplicationLinkedData.fromJSON(seriesScrappedData.linkedData!!)
+    val linkedData = TitleApplicationLinkedData.fromJSON(seriesScrappedData.linkedData!!)
 
     val runtime = seriesScrappedData.runtime!!
     val (startYear, endYear) = if (runtime.contains("–")) {
@@ -192,9 +192,9 @@ fun generateApplicationLinkedData(
     alternateName: String? = "My Alternate TV Show",
     image: String = "http://myposter.com",
     description: String = "A simple TV Show",
-    aggregateRating: ApplicationLinkedData.AggregateRating = generateAggregasteRating(),
+    aggregateRating: TitleApplicationLinkedData.AggregateRating = generateAggregasteRating(),
     genre: Set<String> = setOf("Comedy", "Drama", "Romance")
-) = ApplicationLinkedData(
+) = TitleApplicationLinkedData(
     type = type,
     name = name,
     alternateName = alternateName,
@@ -207,7 +207,7 @@ fun generateApplicationLinkedData(
 fun generateAggregasteRating(
     ratingCount: Int = 1234,
     ratingValue: Float = 8.2F
-) = ApplicationLinkedData.AggregateRating(
+) = TitleApplicationLinkedData.AggregateRating(
     ratingCount = ratingCount,
     ratingValue = ratingValue
 )

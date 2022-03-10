@@ -1,6 +1,6 @@
 package com.diogo_portela.imdb_scraper.helper
 
-import com.diogo_portela.imdb_scraper.model.ApplicationLinkedData
+import com.diogo_portela.imdb_scraper.model.TitleApplicationLinkedData
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 
 fun generateApplicationLinkedDataJson(
@@ -9,7 +9,7 @@ fun generateApplicationLinkedDataJson(
     alternateName: String? = null,
     image: String? = "http://myposter.com",
     description: String? = "A simple TV Show",
-    aggregateRating: ApplicationLinkedData.AggregateRating? = generateAggregasteRating(),
+    aggregateRating: TitleApplicationLinkedData.AggregateRating? = generateAggregasteRating(),
     genre: Set<String> = setOf("Comedy", "Drama", "Romance")
 ) = jacksonObjectMapper().writeValueAsString(
     mutableMapOf(
@@ -36,7 +36,7 @@ fun generateApplicationLinkedDataJson(
 )
 
 fun generateApplicationLinkedDataJson(
-    linkedData: ApplicationLinkedData
+    linkedData: TitleApplicationLinkedData
 ) = jacksonObjectMapper().writeValueAsString(
     mutableMapOf(
         "@type" to linkedData.type,
