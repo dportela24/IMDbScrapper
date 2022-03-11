@@ -65,10 +65,10 @@ class SeriesService(
         )
     }
 
-    private fun raiseBuildingError(message: String) : ErrorBuildingSeriesException {
+    private fun raiseBuildingError(message: String) : SeriesScrappingErrorException {
         val errorMessage = "Error while building Series. $message"
         logger.error(errorMessage)
-        return ErrorBuildingSeriesException(message)
+        return SeriesScrappingErrorException(message)
     }
 
     private fun validateImdbId(imdbId: String) = Regex("^tt\\d{7,8}\$").matches(imdbId)

@@ -1,6 +1,5 @@
 package com.diogo_portela.imdb_scraper.model.exception
 
-class ErrorBuildingSeasonException(
+open class ScrappingErrorException(
     override val message: String
-) : BuildingErrorException(message) {
-}
+) : RuntimeException(message)

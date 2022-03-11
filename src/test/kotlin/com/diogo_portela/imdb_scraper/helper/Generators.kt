@@ -5,6 +5,7 @@ import java.time.Duration
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAccessor
+import kotlin.random.Random
 import kotlin.random.Random.Default.nextFloat
 import kotlin.random.Random.Default.nextInt
 import kotlin.random.Random.Default.nextLong
@@ -211,3 +212,34 @@ fun generateAggregasteRating(
     ratingCount = ratingCount,
     ratingValue = ratingValue
 )
+
+fun generateSearchScrappedData(
+    url: String? = generateSearchScrappedUrl(),
+    name: String? = "My Series name ${nextInt(101)}"
+) = SearchScrappedData(
+    url = url,
+    name = name
+)
+
+fun generateSearchResult(
+    imdbId: String = generateImdbId(),
+    name: String = "My series name ${nextInt(101)}"
+) = SearchResult(
+    imdbId = imdbId,
+    name = name
+)
+
+fun generateSearchResult(
+    searchScrappedData: SearchScrappedData
+) : SearchResult {
+    val imdbId = searchScrappedData.url!!.substring(7).substringBefore("/")
+
+    return SearchResult(
+        imdbId = imdbId,
+        name = searchScrappedData.name!!
+    )
+}
+
+fun generateSearchScrappedUrl(
+    imdbId: String = generateImdbId()
+) = "/title/$imdbId/?ref_=adv_li_tt"

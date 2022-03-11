@@ -25,11 +25,8 @@ fun generateSearchUrl(name: String) : String
 
 fun generateErrorMessage(field: String, input: String? = null) : String {
     return input?.run {
-        if (this.isBlank())
-            "Could not parse $field. Input string was empty."
-        else
-            "Could not parse $field. Input string was $this. " }
-        ?: "Could not find $field element."
+        "Could not parse $field. Input string was ${this.ifBlank { "empty" }}."
+    } ?: "Could not find $field element."
 }
 
 fun getParseDateFunctions() : Set<(String) -> TemporalAccessor> = setOf(

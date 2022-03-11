@@ -4,7 +4,7 @@ import com.diogo_portela.imdb_scraper.helper.generateErrorMessage
 import com.diogo_portela.imdb_scraper.helper.generateSeasonUrl
 import com.diogo_portela.imdb_scraper.model.JSoupConnection
 import com.diogo_portela.imdb_scraper.model.Season
-import com.diogo_portela.imdb_scraper.model.exception.ErrorBuildingSeasonException
+import com.diogo_portela.imdb_scraper.model.exception.SeasonScrappingErrorException
 import com.diogo_portela.imdb_scraper.model.exception.JSoupConnectionException
 import kotlinx.coroutines.*
 import kotlinx.coroutines.slf4j.MDCContext
@@ -73,9 +73,9 @@ class SeasonService(
         }
     }
 
-    private fun raiseBuildingError(message: String) : ErrorBuildingSeasonException {
+    private fun raiseBuildingError(message: String) : SeasonScrappingErrorException {
         val errorMessage = "Error while building Season. $message"
         logger.error(errorMessage)
-        return ErrorBuildingSeasonException(errorMessage)
+        return SeasonScrappingErrorException(errorMessage)
     }
 }

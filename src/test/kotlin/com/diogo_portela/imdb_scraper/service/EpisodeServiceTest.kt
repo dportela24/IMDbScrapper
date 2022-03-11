@@ -3,7 +3,7 @@ package com.diogo_portela.imdb_scraper.service
 import com.diogo_portela.imdb_scraper.helper.*
 import com.diogo_portela.imdb_scraper.model.Episode
 import com.diogo_portela.imdb_scraper.model.EpisodeScrappedData
-import com.diogo_portela.imdb_scraper.model.exception.ErrorBuildingEpisodeException
+import com.diogo_portela.imdb_scraper.model.exception.EpisodeScrappingErrorException
 import io.mockk.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -13,9 +13,7 @@ import org.jsoup.select.Elements
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.time.Month
 import java.time.Year
-import java.time.YearMonth
 import kotlin.system.measureTimeMillis
 
 class EpisodeServiceTest {
@@ -251,7 +249,7 @@ class EpisodeServiceTest {
 
         every { doc.getElementsByClass("list detail eplist").first() } returns null
 
-        val ex = assertThrows<ErrorBuildingEpisodeException> { subject.getEpisodesOfSeason(doc, 1) }
+        val ex = assertThrows<EpisodeScrappingErrorException> { subject.getEpisodesOfSeason(doc, 1) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
     }
@@ -264,7 +262,7 @@ class EpisodeServiceTest {
        setupMocks(setOf(episodeData))
        every { episodeElements.first()!!.getElementsByAttributeValue("itemprop", "episodeNumber").first() } returns null
 
-       val ex = assertThrows<ErrorBuildingEpisodeException> { subject.getEpisodesOfSeason(doc, 1) }
+       val ex = assertThrows<EpisodeScrappingErrorException> { subject.getEpisodesOfSeason(doc, 1) }
 
        assertTrue(ex.message.contains(expectedErrorMessage))
     }
@@ -277,7 +275,7 @@ class EpisodeServiceTest {
 
         setupMocks(setOf(episodeData))
 
-        val ex = assertThrows<ErrorBuildingEpisodeException> { subject.getEpisodesOfSeason(doc, 1) }
+        val ex = assertThrows<EpisodeScrappingErrorException> { subject.getEpisodesOfSeason(doc, 1) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
     }
@@ -290,7 +288,7 @@ class EpisodeServiceTest {
         setupMocks(setOf(episodeData))
         every { episodeElements.first()!!.getElementsByAttributeValue("itemprop", "name").first() } returns null
 
-        val ex = assertThrows<ErrorBuildingEpisodeException> { subject.getEpisodesOfSeason(doc, 1) }
+        val ex = assertThrows<EpisodeScrappingErrorException> { subject.getEpisodesOfSeason(doc, 1) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
     }
@@ -302,7 +300,7 @@ class EpisodeServiceTest {
 
         setupMocks(setOf(episodeData))
 
-        val ex = assertThrows<ErrorBuildingEpisodeException> { subject.getEpisodesOfSeason(doc, 1) }
+        val ex = assertThrows<EpisodeScrappingErrorException> { subject.getEpisodesOfSeason(doc, 1) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
     }
@@ -315,7 +313,7 @@ class EpisodeServiceTest {
 
         setupMocks(setOf(episodesData))
 
-        val ex = assertThrows<ErrorBuildingEpisodeException> { subject.getEpisodesOfSeason(doc, 1) }
+        val ex = assertThrows<EpisodeScrappingErrorException> { subject.getEpisodesOfSeason(doc, 1) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
     }
@@ -328,7 +326,7 @@ class EpisodeServiceTest {
         setupMocks(setOf(episodeData))
         every { episodeElements.first()!!.getElementsByClass("airdate").first() } returns null
 
-        val ex = assertThrows<ErrorBuildingEpisodeException> { subject.getEpisodesOfSeason(doc, 1) }
+        val ex = assertThrows<EpisodeScrappingErrorException> { subject.getEpisodesOfSeason(doc, 1) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
     }
@@ -341,7 +339,7 @@ class EpisodeServiceTest {
 
         setupMocks(setOf(episodeData))
 
-        val ex = assertThrows<ErrorBuildingEpisodeException> { subject.getEpisodesOfSeason(doc, 1) }
+        val ex = assertThrows<EpisodeScrappingErrorException> { subject.getEpisodesOfSeason(doc, 1) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
     }
@@ -354,7 +352,7 @@ class EpisodeServiceTest {
         setupMocks(setOf(episodeData))
         every { episodeElements.first()!!.getElementsByClass("ipl-rating-star__rating").first() } returns null
 
-        val ex = assertThrows<ErrorBuildingEpisodeException> { subject.getEpisodesOfSeason(doc, 1) }
+        val ex = assertThrows<EpisodeScrappingErrorException> { subject.getEpisodesOfSeason(doc, 1) }
 
         assertTrue(ex.message.contains(expectedExceptionMessage))
     }
@@ -367,7 +365,7 @@ class EpisodeServiceTest {
         setupMocks(setOf(episodeData))
         every { episodeElements.first()!!.getElementsByClass("ipl-rating-star__total-votes").first() } returns null
 
-        val ex = assertThrows<ErrorBuildingEpisodeException> { subject.getEpisodesOfSeason(doc, 1) }
+        val ex = assertThrows<EpisodeScrappingErrorException> { subject.getEpisodesOfSeason(doc, 1) }
 
         assertTrue(ex.message.contains(expectedExceptionMessage))
     }
@@ -380,7 +378,7 @@ class EpisodeServiceTest {
         setupMocks(setOf(episodeData))
         every { episodeElements.first()!!.getElementsByClass("item_description").first() } returns null
 
-        val ex = assertThrows<ErrorBuildingEpisodeException> { subject.getEpisodesOfSeason(doc, 1) }
+        val ex = assertThrows<EpisodeScrappingErrorException> { subject.getEpisodesOfSeason(doc, 1) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
     }

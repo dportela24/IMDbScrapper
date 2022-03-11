@@ -4,7 +4,7 @@ import com.diogo_portela.imdb_scraper.helper.generateErrorMessage
 import com.diogo_portela.imdb_scraper.helper.getParseDateFunctions
 import com.diogo_portela.imdb_scraper.helper.matchGroupsInRegex
 import com.diogo_portela.imdb_scraper.model.Episode
-import com.diogo_portela.imdb_scraper.model.exception.ErrorBuildingEpisodeException
+import com.diogo_portela.imdb_scraper.model.exception.EpisodeScrappingErrorException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -148,9 +148,9 @@ class EpisodeService{
         }
     }
 
-    private fun raiseBuildingError(message: String) : ErrorBuildingEpisodeException {
+    private fun raiseBuildingError(message: String) : EpisodeScrappingErrorException {
         val errorMessage = "Error while building Episode. $message"
         logger.error(errorMessage)
-        return ErrorBuildingEpisodeException(message)
+        return EpisodeScrappingErrorException(message)
     }
 }

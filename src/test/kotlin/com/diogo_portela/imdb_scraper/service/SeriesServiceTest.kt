@@ -19,17 +19,17 @@ import org.junit.jupiter.api.assertThrows
 import java.time.Duration
 
 class SeriesServiceTest {
-    val jSoupConnection = mockk<JSoupConnection>()
     val jSoupResponse = mockk<Connection.Response>()
-    val doc = mockk<Document>()
     val seasonService = mockk<SeasonService>()
 
-    val subject = SeriesService(jSoupConnection, seasonService)
-
+    val jSoupConnection = mockk<JSoupConnection>()
+    val doc = mockk<Document>()
     val linkedDataElement = mockk<Element>()
     val undertitleElements = mockk<Elements>()
     val episodeDurationElement = mockk<Element>()
     val numberSeasonsElement = mockk<Element>()
+
+    val subject = SeriesService(jSoupConnection, seasonService)
 
     fun setupMocks(seriesData: SeriesScrappedData, seasons: Set<Season> = emptySet()) {
         every { jSoupConnection.newConnection(any()).execute()} returns jSoupResponse
@@ -374,7 +374,7 @@ class SeriesServiceTest {
         setupMocks(seriesData)
         every { doc.getElementsByAttributeValueStarting("type", "application/ld+json").first() } returns null
 
-        val ex = assertThrows<ErrorBuildingSeriesException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
 
         assertTrue(ex.message.contains(expectedExceptionMessage))
     }
@@ -387,7 +387,7 @@ class SeriesServiceTest {
 
         setupMocks(seriesData)
 
-        val ex = assertThrows<ErrorBuildingSeriesException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
 
         assertTrue(ex.message.contains(expectedExceptionMessage))
     }
@@ -414,7 +414,7 @@ class SeriesServiceTest {
         setupMocks(seriesData)
         every { doc.getElementsByAttributeValueStarting("data-testid", "hero-title-block__metadata").first()?.children() } returns null
 
-        val ex = assertThrows<ErrorBuildingSeriesException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
 
         assertTrue(ex.message.contains(expectedExceptionMessage))
     }
@@ -428,7 +428,7 @@ class SeriesServiceTest {
         setupMocks(seriesData)
         every { undertitleElements[1]?.children()?.last()?.text() } returns null
 
-        val ex = assertThrows<ErrorBuildingSeriesException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
 
         assertTrue(ex.message.contains(expectedExceptionMessage))
     }
@@ -440,7 +440,7 @@ class SeriesServiceTest {
         val expectedExceptionMessage = "Could not parse runtime. Input string was empty."
 
         setupMocks(seriesData)
-        val ex = assertThrows<ErrorBuildingSeriesException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
 
         assertTrue(ex.message.contains(expectedExceptionMessage))
     }
@@ -453,7 +453,7 @@ class SeriesServiceTest {
         val expectedExceptionMessage = "Could not parse runtime. Input string was $runtime."
 
         setupMocks(seriesData)
-        val ex = assertThrows<ErrorBuildingSeriesException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
 
         assertTrue(ex.message.contains(expectedExceptionMessage))
     }
@@ -465,7 +465,7 @@ class SeriesServiceTest {
         val expectedErrorMessage = "Could not parse episodeDuration. Input string was empty."
 
         setupMocks(seriesData)
-        val ex = assertThrows<ErrorBuildingSeriesException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
     }
@@ -478,7 +478,7 @@ class SeriesServiceTest {
         val expectedErrorMessage = "Could not parse episodeDuration. Input string was $episodeDuration."
 
         setupMocks(seriesData)
-        val ex = assertThrows<ErrorBuildingSeriesException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
     }
@@ -493,7 +493,7 @@ class SeriesServiceTest {
         every { doc.getElementsByAttributeValueStarting("class", "BrowseEpisodes__BrowseLinksContainer").first() } returns null
         every { doc.getElementsByAttributeValueStarting("for", "browse-episodes-season").first() } returns null
 
-        val ex = assertThrows<ErrorBuildingSeriesException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
     }
@@ -505,7 +505,7 @@ class SeriesServiceTest {
         val expectedErrorMessage = "Could not parse numberSeasons. Input string was empty."
 
         setupMocks(seriesData)
-        val ex = assertThrows<ErrorBuildingSeriesException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
     }
@@ -518,7 +518,7 @@ class SeriesServiceTest {
         val expectedErrorMessage = "Could not parse numberSeasons. Input string was $numberSeasons."
 
         setupMocks(seriesData)
-        val ex = assertThrows<ErrorBuildingSeriesException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
     }
@@ -532,9 +532,9 @@ class SeriesServiceTest {
 
         setupMocks(seriesData, series.seasons)
 
-        every { seasonService.getSeasonsOfSeries(imdbId, series.numberSeasons) } throws ErrorBuildingSeasonException(expectedErrorMessage)
+        every { seasonService.getSeasonsOfSeries(imdbId, series.numberSeasons) } throws SeasonScrappingErrorException(expectedErrorMessage)
 
-        val ex = assertThrows<ErrorBuildingSeasonException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<SeasonScrappingErrorException> { subject.scrapTitle(imdbId) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
     }
@@ -547,9 +547,9 @@ class SeriesServiceTest {
         val expectedErrorMessage = "Could not build episode"
 
         setupMocks(seriesData, series.seasons)
-        every { seasonService.getSeasonsOfSeries(imdbId, series.numberSeasons) } throws ErrorBuildingEpisodeException(expectedErrorMessage)
+        every { seasonService.getSeasonsOfSeries(imdbId, series.numberSeasons) } throws EpisodeScrappingErrorException(expectedErrorMessage)
 
-        val ex = assertThrows<ErrorBuildingEpisodeException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<EpisodeScrappingErrorException> { subject.scrapTitle(imdbId) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
     }

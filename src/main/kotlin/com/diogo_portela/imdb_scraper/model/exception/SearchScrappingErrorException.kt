@@ -1,6 +1,5 @@
 package com.diogo_portela.imdb_scraper.model.exception
 
-class ErrorBuildingEpisodeException(
+class SearchScrappingErrorException (
     override val message: String
-) : BuildingErrorException(message) {
-}
+) : ScrappingErrorException(message)

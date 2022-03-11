@@ -3,16 +3,11 @@ package com.diogo_portela.imdb_scraper.controller
 import com.diogo_portela.imdb_scraper.helper.generateImdbId
 import com.diogo_portela.imdb_scraper.helper.generateSeries
 import com.diogo_portela.imdb_scraper.model.ErrorDetails
-import com.diogo_portela.imdb_scraper.model.Series
 import com.diogo_portela.imdb_scraper.model.exception.*
 import com.diogo_portela.imdb_scraper.service.SeriesService
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import io.mockk.every
 import io.mockk.mockk
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
@@ -21,9 +16,8 @@ import org.springframework.context.annotation.Bean
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
-import java.time.Duration
 
-@WebMvcTest
+@WebMvcTest(ScrapController::class)
 class ScrapControllerTest {
     @TestConfiguration
     class ScrapControllerTestConfig {
@@ -108,14 +102,14 @@ class ScrapControllerTest {
         val exceptionMessage = "My exception message"
 
         val expectedErrorDetails = ErrorDetails(
-            ErrorDetails.ErrorCode.BUILDING_ERROR,
-            "Building Error",
-            "A problem occurred consolidating the series data."
+            ErrorDetails.ErrorCode.SCRAPPING_ERROR,
+            "Scrapping Error",
+            "A problem occurred consolidating scrapped data."
         )
 
         val expectedErrorDetailsJson = objectMapper.writeValueAsString(expectedErrorDetails)
 
-        every { seriesService.scrapTitle(imdbId) } throws ErrorBuildingSeriesException(exceptionMessage)
+        every { seriesService.scrapTitle(imdbId) } throws SeriesScrappingErrorException(exceptionMessage)
 
         mockMVc.get("/scrap/id/$imdbId")
             .andExpect{

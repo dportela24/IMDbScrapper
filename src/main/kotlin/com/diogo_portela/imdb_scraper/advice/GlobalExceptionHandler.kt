@@ -32,15 +32,16 @@ class GlobalExceptionHandler {
         return ResponseEntity(errorDetails, HttpStatus.BAD_GATEWAY)
     }
 
-    @ExceptionHandler(value = [ErrorBuildingSeriesException::class,
-        ErrorBuildingSeasonException::class,
-        ErrorBuildingEpisodeException::class
+    @ExceptionHandler(value = [SeriesScrappingErrorException::class,
+        SeasonScrappingErrorException::class,
+        EpisodeScrappingErrorException::class,
+        SearchScrappingErrorException::class
     ])
-    fun handleErrorBuildingException(req: HttpServletRequest, ex: BuildingErrorException) : ResponseEntity<ErrorDetails> {
+    fun handleErrorBuildingException(req: HttpServletRequest, ex: ScrappingErrorException) : ResponseEntity<ErrorDetails> {
         val errorDetails = ErrorDetails(
-            ErrorDetails.ErrorCode.BUILDING_ERROR,
-            "Building Error",
-            "A problem occurred consolidating the series data."
+            ErrorDetails.ErrorCode.SCRAPPING_ERROR,
+            "Scrapping Error",
+            "A problem occurred consolidating scrapped data."
         )
 
         return ResponseEntity(errorDetails, HttpStatus.SERVICE_UNAVAILABLE)
@@ -68,7 +69,7 @@ class GlobalExceptionHandler {
         return ResponseEntity(errorDetails, HttpStatus.NOT_FOUND)
     }
 
-    //@ExceptionHandler(value = [RuntimeException::class])
+    @ExceptionHandler(value = [RuntimeException::class])
     fun handleUnknownError(req: HttpServletRequest, ex: RuntimeException) : ResponseEntity<ErrorDetails> {
         val errorDetails = ErrorDetails(
             ErrorDetails.ErrorCode.UNEXPECTED_ERROR,
@@ -88,5 +89,16 @@ class GlobalExceptionHandler {
         )
 
         return ResponseEntity(errorDetails, HttpStatus.BAD_REQUEST)
+    }
+
+    @ExceptionHandler(value = [EmptySearchResultException::class])
+    fun handleEmptySearchResult(req: HttpServletRequest, ex: EmptySearchResultException) : ResponseEntity<ErrorDetails> {
+        val errorDetails = ErrorDetails(
+            ErrorDetails.ErrorCode.NO_SEARCH_RESULTS,
+            "No search results",
+            "Search returned no results"
+        )
+
+        return ResponseEntity(errorDetails, HttpStatus.NOT_FOUND)
     }
 }

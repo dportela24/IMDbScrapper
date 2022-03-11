@@ -5,9 +5,10 @@ import com.diogo_portela.imdb_scraper.helper.generateSearchUrl
 import com.diogo_portela.imdb_scraper.helper.matchGroupsInRegex
 import com.diogo_portela.imdb_scraper.model.JSoupConnection
 import com.diogo_portela.imdb_scraper.model.SearchResult
+import com.diogo_portela.imdb_scraper.model.exception.EmptySearchResultException
 import com.diogo_portela.imdb_scraper.model.exception.JSoupConnectionException
 import com.diogo_portela.imdb_scraper.model.exception.MissingParametersException
-import com.diogo_portela.imdb_scraper.model.exception.SearchErrorException
+import com.diogo_portela.imdb_scraper.model.exception.SearchScrappingErrorException
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import org.slf4j.LoggerFactory
@@ -19,29 +20,29 @@ class SearchService(
 ) {
     val logger = LoggerFactory.getLogger(this::class.java)
 
-    fun searchByName(name: String?, limit: Int): Set<SearchResult> {
-        if (name.isNullOrEmpty()) throw MissingParametersException(listOf("name"))
+    fun searchByName(searchInput: String?, limit: Int): Set<SearchResult> {
+        if (searchInput.isNullOrEmpty()) throw MissingParametersException(listOf("searchInput"))
 
-        val document = fetchSearchResults(name)
+        val doc = fetchSearchResults(searchInput)
 
-        val resultsList = getSearchResults(document, limit)
+        val resultsList = getSearchResults(doc, limit)
 
         return resultsList
             .map { getSearchItem(it) }
             .toSet()
     }
 
-    private fun raiseSearchError(message: String) : SearchErrorException {
+    private fun raiseSearchError(message: String) : SearchScrappingErrorException {
         val errorMessage = "Error while performing search. $message"
         logger.error(errorMessage)
-        return SearchErrorException(message)
+        return SearchScrappingErrorException(message)
     }
 
-    private fun fetchSearchResults(name: String) : Document {
+    private fun fetchSearchResults(searchInput: String) : Document {
         return try {
             logger.trace("Making request for season")
             jSoupConnection
-                .newConnection(generateSearchUrl(name))
+                .newConnection(generateSearchUrl(searchInput))
                 .get()
         } catch (ex: Exception) {
             val errorMessage = "Could not fetch search results. ${ex.message}"
@@ -50,9 +51,16 @@ class SearchService(
         }
     }
 
-    private fun getSearchResults(document: Document, limit: Int) =
-        document.getElementsByClass("lister-list").first()?.children()?.subList(0, limit)
-            ?: throw raiseSearchError("searchResultList")
+    private fun getSearchResults(doc: Document, limit: Int) : List<Element> {
+        val resultsList = doc.getElementsByClass("lister-list").first()?.children()
+            ?: throw EmptySearchResultException()
+
+        return if (resultsList.size > limit) {
+            resultsList.subList(0, limit)
+        } else {
+            resultsList
+        }
+    }
 
     private fun getSearchItem(element: Element) : SearchResult {
         val header = element.getElementsByClass("lister-item-header").first()
@@ -65,7 +73,7 @@ class SearchService(
         val imdbId = parseImdbId(url)
 
         val name = aLink.text()
-        if (name.isBlank()) throw raiseSearchError(generateErrorMessage("searchResultUrl", name))
+        if (name.isBlank()) throw raiseSearchError(generateErrorMessage("searchResultName", name))
 
         return SearchResult(imdbId, name)
     }
@@ -74,7 +82,7 @@ class SearchService(
         val groupValues = try {
             matchGroupsInRegex(url, ".+(tt\\d{7,8}).+")!!
         } catch (_: Exception) {
-            throw raiseSearchError(generateErrorMessage("episodeDuration", url))
+            throw raiseSearchError(generateErrorMessage("searchResultImdbId", url))
         }
 
         return groupValues[1]

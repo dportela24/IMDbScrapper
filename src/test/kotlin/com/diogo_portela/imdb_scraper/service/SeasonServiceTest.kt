@@ -7,8 +7,8 @@ import com.diogo_portela.imdb_scraper.model.Episode
 import com.diogo_portela.imdb_scraper.model.JSoupConnection
 import com.diogo_portela.imdb_scraper.model.Season
 import com.diogo_portela.imdb_scraper.model.SeasonScrappedData
-import com.diogo_portela.imdb_scraper.model.exception.ErrorBuildingEpisodeException
-import com.diogo_portela.imdb_scraper.model.exception.ErrorBuildingSeasonException
+import com.diogo_portela.imdb_scraper.model.exception.EpisodeScrappingErrorException
+import com.diogo_portela.imdb_scraper.model.exception.SeasonScrappingErrorException
 import com.diogo_portela.imdb_scraper.model.exception.JSoupConnectionException
 import io.mockk.*
 import kotlinx.coroutines.delay
@@ -137,7 +137,7 @@ class SeasonServiceTest {
         setupMocks(seasonsElementData, seasons.map { it.episodes })
         every { seasonDocs[seasonWithErrorNumber - 1].getElementsByAttributeValue("itemprop", "numberofEpisodes").first() } returns null
 
-        val ex = assertThrows<ErrorBuildingSeasonException> { subject.getSeasonsOfSeries(generateImdbId(), numberSeasons) }
+        val ex = assertThrows<SeasonScrappingErrorException> { subject.getSeasonsOfSeries(generateImdbId(), numberSeasons) }
 
         assertTrue(ex.message.contains(expectedExceptionMessage))
     }
@@ -152,7 +152,7 @@ class SeasonServiceTest {
         seasonsElementData[seasonWithErrorNumber - 1].numberEpisodes = ""
         setupMocks(seasonsElementData, seasons.map { it.episodes })
 
-        val ex = assertThrows<ErrorBuildingSeasonException> { subject.getSeasonsOfSeries(generateImdbId(), numberSeasons) }
+        val ex = assertThrows<SeasonScrappingErrorException> { subject.getSeasonsOfSeries(generateImdbId(), numberSeasons) }
 
         assertTrue(ex.message.contains(expectedExceptionMessage))
     }
@@ -168,7 +168,7 @@ class SeasonServiceTest {
         seasonsElementData[seasonWithErrorNumber - 1].numberEpisodes = numberEpisodesText
         setupMocks(seasonsElementData, seasons.map { it.episodes })
 
-        val ex = assertThrows<ErrorBuildingSeasonException> { subject.getSeasonsOfSeries(generateImdbId(), numberSeasons) }
+        val ex = assertThrows<SeasonScrappingErrorException> { subject.getSeasonsOfSeries(generateImdbId(), numberSeasons) }
 
         assertTrue(ex.message.contains(expectedExceptionMessage))
     }
@@ -181,9 +181,9 @@ class SeasonServiceTest {
         val expectedExceptionMessage = "Error building episode."
 
         setupMocks(seasonsElementData, seasons.map { it.episodes })
-        every { episodeService.getEpisodesOfSeason(seasonDocs[seasonWithErrorNumber - 1], any()) } throws ErrorBuildingEpisodeException(expectedExceptionMessage)
+        every { episodeService.getEpisodesOfSeason(seasonDocs[seasonWithErrorNumber - 1], any()) } throws EpisodeScrappingErrorException(expectedExceptionMessage)
 
-        val ex = assertThrows<ErrorBuildingEpisodeException> { subject.getSeasonsOfSeries(generateImdbId(), numberSeasons) }
+        val ex = assertThrows<EpisodeScrappingErrorException> { subject.getSeasonsOfSeries(generateImdbId(), numberSeasons) }
 
         assertTrue(ex.message.contains(expectedExceptionMessage))
     }
