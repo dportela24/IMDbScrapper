@@ -74,7 +74,9 @@ class SeasonService(
     }
 
     private fun raiseBuildingError(message: String) : SeasonScrappingErrorException {
-        val errorMessage = "Error while building Season. $message"
+        val series = MDC.get("series")
+        val seasonNumber = MDC.get("season")
+        val errorMessage = "Error while building Series $series Season $seasonNumber. $message"
         logger.error(errorMessage)
         return SeasonScrappingErrorException(errorMessage)
     }

@@ -65,12 +65,6 @@ class SeriesService(
         )
     }
 
-    private fun raiseBuildingError(message: String) : SeriesScrappingErrorException {
-        val errorMessage = "Error while building Series. $message"
-        logger.error(errorMessage)
-        return SeriesScrappingErrorException(message)
-    }
-
     private fun validateImdbId(imdbId: String) = Regex("^tt\\d{7,8}\$").matches(imdbId)
 
     private fun fetchSeriesHtml(imdbId: String) : Document {
@@ -197,5 +191,12 @@ class SeriesService(
         }
 
         return numberSeasonsGroupValues[1].toInt()
+    }
+
+    private fun raiseBuildingError(message: String) : SeriesScrappingErrorException {
+        val series = MDC.get("series")
+        val errorMessage = "Error while building Series $series. $message"
+        logger.error(errorMessage)
+        return SeriesScrappingErrorException(message)
     }
 }

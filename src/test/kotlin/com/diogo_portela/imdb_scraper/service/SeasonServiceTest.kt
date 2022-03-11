@@ -1,5 +1,6 @@
 package com.diogo_portela.imdb_scraper.service
 
+import com.diogo_portela.imdb_scraper.helper.generateErrorMessage
 import com.diogo_portela.imdb_scraper.helper.generateImdbId
 import com.diogo_portela.imdb_scraper.helper.generateSeason
 import com.diogo_portela.imdb_scraper.helper.generateSeasonScrappedData
@@ -143,13 +144,13 @@ class SeasonServiceTest {
     }
 
     @Test
-    fun `NumberEpisodes - If number of episodes is blank for one season, it throws ErrorBuildingSeasonException`() {
-        val numberSeasons = 2
-        val seasonWithErrorNumber = 2
+    fun `NumberEpisodes - If number of episodes is blank, it throws ErrorBuildingSeasonException`() {
+        val numberSeasons = 1
+        val numberEpisodes = ""
         val (seasonsElementData, seasons) = setupSeasons(numberSeasons)
-        val expectedExceptionMessage = "Could not parse numberEpisodes. Input string was "
+        val expectedExceptionMessage = generateErrorMessage("numberEpisodes", numberEpisodes)
 
-        seasonsElementData[seasonWithErrorNumber - 1].numberEpisodes = ""
+        seasonsElementData[0].numberEpisodes = numberEpisodes
         setupMocks(seasonsElementData, seasons.map { it.episodes })
 
         val ex = assertThrows<SeasonScrappingErrorException> { subject.getSeasonsOfSeries(generateImdbId(), numberSeasons) }
@@ -158,14 +159,13 @@ class SeasonServiceTest {
     }
 
     @Test
-    fun `NumberEpisodes - If number of episodes could not be parsed for one season, it throws ErrorBuildingSeasonException`() {
-        val numberSeasons = 2
-        val seasonWithErrorNumber = 2
+    fun `NumberEpisodes - If number of episodes could not be parsed, it throws ErrorBuildingSeasonException`() {
+        val numberSeasons = 1
+        val numberEpisodes = "Not a valid numberEpisodes"
         val (seasonsElementData, seasons) = setupSeasons(numberSeasons)
-        val numberEpisodesText = "Not a valid numberEpisodes"
-        val expectedExceptionMessage = "Could not parse numberEpisodes. Input string was $numberEpisodesText."
+        val expectedExceptionMessage = generateErrorMessage("numberEpisodes", numberEpisodes)
 
-        seasonsElementData[seasonWithErrorNumber - 1].numberEpisodes = numberEpisodesText
+        seasonsElementData[0].numberEpisodes = numberEpisodes
         setupMocks(seasonsElementData, seasons.map { it.episodes })
 
         val ex = assertThrows<SeasonScrappingErrorException> { subject.getSeasonsOfSeries(generateImdbId(), numberSeasons) }

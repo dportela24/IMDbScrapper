@@ -352,7 +352,7 @@ class SeriesServiceTest {
     }
 
     @Test
-    fun `Connection - If IMDb response has 404 status code throws TVSeriesNotFoundException`() {
+    fun `TVSeriesNotFound - If IMDb response has 404 status code throws TVSeriesNotFoundException`() {
         val imdbId = generateImdbId()
         val seriesData = generateSeriesScrappedData()
         val expectedErrorMessage = "Could not found TV Series with Id $imdbId"
@@ -369,7 +369,7 @@ class SeriesServiceTest {
     fun `LinkedData - If linkedDataElement is not found throws ErrorBuildingSeriesException`() {
         val imdbId = generateImdbId()
         val seriesData = generateSeriesScrappedData()
-        val expectedExceptionMessage = "Could not find linkedData element"
+        val expectedExceptionMessage = generateErrorMessage("linkedData")
 
         setupMocks(seriesData)
         every { doc.getElementsByAttributeValueStarting("type", "application/ld+json").first() } returns null
@@ -409,7 +409,7 @@ class SeriesServiceTest {
     fun `UnderTitleElements - If underTitleElements could not be found throws ErrorBuildingSeriesException`() {
         val imdbId = generateImdbId()
         val seriesData = generateSeriesScrappedData()
-        val expectedExceptionMessage = "Could not find underTitle element"
+        val expectedExceptionMessage = generateErrorMessage("underTitle")
 
         setupMocks(seriesData)
         every { doc.getElementsByAttributeValueStarting("data-testid", "hero-title-block__metadata").first()?.children() } returns null
@@ -423,7 +423,7 @@ class SeriesServiceTest {
     fun `RuntimeText - If runtimeText could not be found throws ErrorBuildingSeriesException`() {
         val imdbId = generateImdbId()
         val seriesData = generateSeriesScrappedData(runtime = null)
-        val expectedExceptionMessage = "Could not find runtime element"
+        val expectedExceptionMessage = generateErrorMessage("runtime")
 
         setupMocks(seriesData)
         every { undertitleElements[1]?.children()?.last()?.text() } returns null
@@ -435,9 +435,10 @@ class SeriesServiceTest {
 
     @Test
     fun `RuntimeText - If runtimeText is blank throws ErrorBuildingSeriesException`() {
+        val runtime = ""
         val imdbId = generateImdbId()
-        val seriesData = generateSeriesScrappedData(runtime = "")
-        val expectedExceptionMessage = "Could not parse runtime. Input string was empty."
+        val seriesData = generateSeriesScrappedData(runtime = runtime)
+        val expectedExceptionMessage = generateErrorMessage("runtime", runtime)
 
         setupMocks(seriesData)
         val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
@@ -450,7 +451,7 @@ class SeriesServiceTest {
         val imdbId = generateImdbId()
         val runtime = "An invalid runtime"
         val seriesData = generateSeriesScrappedData(runtime = runtime)
-        val expectedExceptionMessage = "Could not parse runtime. Input string was $runtime."
+        val expectedExceptionMessage = generateErrorMessage("runtime", runtime)
 
         setupMocks(seriesData)
         val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
@@ -460,9 +461,10 @@ class SeriesServiceTest {
 
     @Test
     fun `EpisodeDuration - If episodeDuration is blank throws ErrorBuildingSeriesException`() {
+        val episodeDuration = ""
         val imdbId = generateImdbId()
-        val seriesData = generateSeriesScrappedData(episodeDuration = "")
-        val expectedErrorMessage = "Could not parse episodeDuration. Input string was empty."
+        val seriesData = generateSeriesScrappedData(episodeDuration = episodeDuration)
+        val expectedErrorMessage = generateErrorMessage("episodeDuration", episodeDuration)
 
         setupMocks(seriesData)
         val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
@@ -475,7 +477,7 @@ class SeriesServiceTest {
         val imdbId = generateImdbId()
         val episodeDuration = "An invalid episode duration"
         val seriesData = generateSeriesScrappedData(episodeDuration = episodeDuration)
-        val expectedErrorMessage = "Could not parse episodeDuration. Input string was $episodeDuration."
+        val expectedErrorMessage = generateErrorMessage("episodeDuration", episodeDuration)
 
         setupMocks(seriesData)
         val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
@@ -487,7 +489,7 @@ class SeriesServiceTest {
     fun `NumberSeasons - If numberSeasons could not be found throws ErrorBuildingSeriesException`() {
         val imdbId = generateImdbId()
         val seriesData = generateSeriesScrappedData()
-        val expectedErrorMessage = "Could not find numberSeasons element"
+        val expectedErrorMessage = generateErrorMessage("numberSeasons")
 
         setupMocks(seriesData)
         every { doc.getElementsByAttributeValueStarting("class", "BrowseEpisodes__BrowseLinksContainer").first() } returns null
@@ -500,9 +502,10 @@ class SeriesServiceTest {
 
     @Test
     fun `NumberSeasons - If numberSeasons is blank throws ErrorBuildingSeriesException`() {
+        val numberSeasons = ""
         val imdbId = generateImdbId()
-        val seriesData = generateSeriesScrappedData(numberSeasons = "")
-        val expectedErrorMessage = "Could not parse numberSeasons. Input string was empty."
+        val seriesData = generateSeriesScrappedData(numberSeasons = numberSeasons)
+        val expectedErrorMessage = generateErrorMessage("numberSeasons", numberSeasons)
 
         setupMocks(seriesData)
         val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
@@ -515,7 +518,7 @@ class SeriesServiceTest {
         val imdbId = generateImdbId()
         val numberSeasons = "An invalid numberSeasons"
         val seriesData = generateSeriesScrappedData(numberSeasons = numberSeasons)
-        val expectedErrorMessage = "Could not parse numberSeasons. Input string was $numberSeasons."
+        val expectedErrorMessage = generateErrorMessage("numberSeasons", numberSeasons)
 
         setupMocks(seriesData)
         val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }

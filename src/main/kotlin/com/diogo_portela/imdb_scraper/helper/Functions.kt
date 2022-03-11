@@ -25,7 +25,7 @@ fun generateSearchUrl(name: String) : String
 
 fun generateErrorMessage(field: String, input: String? = null) : String {
     return input?.run {
-        "Could not parse $field. Input string was ${this.ifBlank { "empty" }}."
+        "Could not parse $field, input string was ${this.ifBlank { "empty" }}."
     } ?: "Could not find $field element."
 }
 

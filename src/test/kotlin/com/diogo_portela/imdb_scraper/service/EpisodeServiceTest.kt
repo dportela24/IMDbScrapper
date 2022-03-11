@@ -295,8 +295,9 @@ class EpisodeServiceTest {
 
     @Test
     fun `Name - If name is blank for one episode, it throws ErrorBuildingEpisodeException`(){
-        val episodeData = generateEpisodeScrappedData(name = "")
-        val expectedErrorMessage = "Episode name text was blank"
+        val name = ""
+        val episodeData = generateEpisodeScrappedData(name = name)
+        val expectedErrorMessage = generateErrorMessage("name", name)
 
         setupMocks(setOf(episodeData))
 

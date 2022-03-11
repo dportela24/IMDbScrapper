@@ -1,5 +1,6 @@
 package com.diogo_portela.imdb_scraper.service
 
+import com.diogo_portela.imdb_scraper.helper.generateErrorMessage
 import com.diogo_portela.imdb_scraper.helper.generateSearchResult
 import com.diogo_portela.imdb_scraper.helper.generateSearchScrappedData
 import com.diogo_portela.imdb_scraper.model.JSoupConnection
@@ -166,7 +167,7 @@ class SearchServiceTest {
         val searchLimit = nextInt(1, 11)
         val searchStr = "My search"
         val scrappedData = generateSearchScrappedData()
-        val expectedErrorMessage = "Could not find searchResultHeader element."
+        val expectedErrorMessage = generateErrorMessage("searchResultHeader")
 
         setupMocks(listOf(scrappedData))
         every { resultsList.first()!!.getElementsByClass("lister-item-header").first() } returns null
@@ -181,7 +182,7 @@ class SearchServiceTest {
         val searchLimit = nextInt(1, 11)
         val searchStr = "My search"
         val scrappedData = generateSearchScrappedData()
-        val expectedErrorMessage = "Could not find searchResultALink element."
+        val expectedErrorMessage = generateErrorMessage("searchResultALink")
 
         setupMocks(listOf(scrappedData))
         every { headerElements.first()!!.getElementsByTag("a").first() } returns null
@@ -193,10 +194,11 @@ class SearchServiceTest {
 
     @Test
     fun `searchResultImdbId - If url is blank throws SearchErrorException`() {
+        val url = ""
         val searchLimit = nextInt(1, 11)
         val searchStr = "My search"
-        val scrappedData = generateSearchScrappedData(url = "")
-        val expectedErrorMessage = "Could not parse searchResultImdbId. Input string was empty"
+        val scrappedData = generateSearchScrappedData(url = url)
+        val expectedErrorMessage = generateErrorMessage("searchResultImdbId", url)
 
         setupMocks(listOf(scrappedData))
 
@@ -211,7 +213,7 @@ class SearchServiceTest {
         val searchLimit = nextInt(1, 11)
         val searchStr = "My search"
         val scrappedData = generateSearchScrappedData(url = url)
-        val expectedErrorMessage = "Could not parse searchResultImdbId. Input string was $url."
+        val expectedErrorMessage = generateErrorMessage("searchResultImdbId", url)
 
         setupMocks(listOf(scrappedData))
 
@@ -222,10 +224,11 @@ class SearchServiceTest {
 
     @Test
     fun `name - If name is blank throws SearchErrorException`() {
+        val name = ""
         val searchLimit = nextInt(1, 11)
         val searchStr = "My search"
-        val scrappedData = generateSearchScrappedData(name = "")
-        val expectedErrorMessage = "Could not parse searchResultName. Input string was empty"
+        val scrappedData = generateSearchScrappedData(name = name)
+        val expectedErrorMessage = generateErrorMessage("searchResultName", name)
 
         setupMocks(listOf(scrappedData))
 
