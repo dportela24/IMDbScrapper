@@ -14,9 +14,10 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import javax.servlet.http.HttpServletRequest
 
 @ControllerAdvice
-class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
-    override fun handleNoHandlerFoundException(ex : NoHandlerFoundException, headers: HttpHeaders,
-                                      status: HttpStatus, request: WebRequest) : ResponseEntity<Any> {
+class GlobalExceptionHandler {
+    @ExceptionHandler(value = [NoHandlerFoundException::class])
+    fun handleNoHandlerFoundException(req: HttpServletRequest,
+                                      ex : NoHandlerFoundException) : ResponseEntity<ErrorDetails> {
         val errorDetails = ErrorDetails(
             ErrorDetails.ErrorCode.NO_ENDPOINT_HANDLER,
             "Endpoint not implemented",
@@ -26,8 +27,9 @@ class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
         return ResponseEntity(errorDetails, HttpStatus.NOT_FOUND)
     }
 
-    override fun handleHttpRequestMethodNotSupported(ex : HttpRequestMethodNotSupportedException, headers: HttpHeaders,
-                                            status: HttpStatus, request: WebRequest) : ResponseEntity<Any> {
+    @ExceptionHandler(value = [HttpRequestMethodNotSupportedException::class])
+    fun handleHttpRequestMethodNotSupported(req: HttpServletRequest,
+                                            ex : HttpRequestMethodNotSupportedException) : ResponseEntity<ErrorDetails> {
         val errorDetails = ErrorDetails(
             ErrorDetails.ErrorCode.NO_HTTP_METHOD,
             "Method not found",
