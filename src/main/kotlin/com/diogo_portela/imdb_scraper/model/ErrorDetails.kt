@@ -7,13 +7,15 @@ data class ErrorDetails(
 ) {
     class ErrorCode {
         companion object {
-            val NOT_A_TV_SERIES_ERROR = "000001"
-            val CONNECTION_ERROR      = "000002"
-            val SCRAPPING_ERROR        = "000003"
-            val INVALID_IMDB_ID       = "000004"
-            val TV_SERIES_NOT_FOUND   = "000005"
-            val MISSING_PARAMETERS    = "000006"
-            val NO_SEARCH_RESULTS     = "000007"
+            val NO_ENDPOINT_HANDLER   = "000001"
+            val NO_HTTP_METHOD        = "000002"
+            val NOT_A_TV_SERIES_ERROR = "000003"
+            val CONNECTION_ERROR      = "000004"
+            val SCRAPPING_ERROR       = "000005"
+            val INVALID_IMDB_ID       = "000006"
+            val TV_SERIES_NOT_FOUND   = "000007"
+            val MISSING_PARAMETERS    = "000008"
+            val NO_SEARCH_RESULTS     = "000009"
             val UNEXPECTED_ERROR      = "111111"
         }
     }
