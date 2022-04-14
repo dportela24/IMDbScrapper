@@ -112,7 +112,7 @@ class GlobalExceptionHandler {
             "An unexpected error occurred processing the request..."
         )
 
-        return ResponseEntity(errorDetails, HttpStatus.NOT_FOUND)
+        return ResponseEntity(errorDetails, HttpStatus.SERVICE_UNAVAILABLE)
     }
 
     @ExceptionHandler(value = [MissingParametersException::class])

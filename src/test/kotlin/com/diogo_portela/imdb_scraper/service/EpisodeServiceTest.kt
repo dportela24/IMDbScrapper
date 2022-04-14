@@ -13,7 +13,9 @@ import org.jsoup.select.Elements
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.time.Instant
 import java.time.Year
+import java.time.YearMonth
 import kotlin.system.measureTimeMillis
 
 class EpisodeServiceTest {
@@ -164,6 +166,9 @@ class EpisodeServiceTest {
 
     @Test
     fun `Happy path - Airdate - Episodes with year`(){
+        val jack = YearMonth.now()
+        println(jack)
+
         val episodeData = generateEpisodeScrappedData(airdate = "2014")
         val expectedAirdate = Year.of(2014)
         val expectedEpisode = generateEpisode(episodeData)
