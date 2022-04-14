@@ -182,7 +182,7 @@ class ScrapControllerTest {
 
         mockMVc.get("/scrap/id/$imdbId")
             .andExpect{
-                status { isNotFound() }
+                status { isServiceUnavailable() }
                 content { contentType(MediaType.APPLICATION_JSON) }
                 content { json(expectedErrorDetailsJson) }
             }

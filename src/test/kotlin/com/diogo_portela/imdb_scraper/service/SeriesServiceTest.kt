@@ -46,12 +46,12 @@ class SeriesServiceTest {
         every { seasonService.getSeasonsOfSeries(any(), seasons.size) } returns seasons
 
         if (seriesData.numberSeasons == "1 Season") {
-            every { doc.getElementsByAttributeValueStarting("class", "BrowseEpisodes__BrowseLinksContainer").first() } returns numberSeasonsElement
+            every { doc.getElementsByClass("episodes-browse-episodes").first() } returns numberSeasonsElement
             every { doc.getElementsByAttributeValueStarting("for", "browse-episodes-season").first() } returns null
             every { numberSeasonsElement.getElementsByAttributeValueContaining("href", "season").text() } returns seriesData.numberSeasons!!
         } else {
             every { doc.getElementsByAttributeValueStarting("for", "browse-episodes-season").first() } returns numberSeasonsElement
-            every { doc.getElementsByAttributeValueStarting("class", "BrowseEpisodes__BrowseLinksContainer").first() } returns null
+            every { doc.getElementsByAttributeValueStarting("class", "episodes-browse-episodes").first() } returns null
             every { numberSeasonsElement.text() } returns seriesData.numberSeasons!!
         }
     }
@@ -355,7 +355,7 @@ class SeriesServiceTest {
     fun `TVSeriesNotFound - If IMDb response has 404 status code throws TVSeriesNotFoundException`() {
         val imdbId = generateImdbId()
         val seriesData = generateSeriesScrappedData()
-        val expectedErrorMessage = "Could not found TV Series with Id $imdbId"
+        val expectedErrorMessage = "Could not find TV Series with Id $imdbId"
 
         setupMocks(seriesData)
         every { jSoupResponse.statusCode() } returns 404
@@ -492,7 +492,7 @@ class SeriesServiceTest {
         val expectedErrorMessage = generateErrorMessage("numberSeasons")
 
         setupMocks(seriesData)
-        every { doc.getElementsByAttributeValueStarting("class", "BrowseEpisodes__BrowseLinksContainer").first() } returns null
+        every { doc.getElementsByClass("episodes-browse-episodes").first() } returns null
         every { doc.getElementsByAttributeValueStarting("for", "browse-episodes-season").first() } returns null
 
         val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }

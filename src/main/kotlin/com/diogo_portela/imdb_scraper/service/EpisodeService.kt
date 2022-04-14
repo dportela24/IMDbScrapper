@@ -149,7 +149,7 @@ class EpisodeService{
     }
 
     private fun raiseBuildingError(message: String) : EpisodeScrappingErrorException {
-        val series = MDC.get("series")
+        val series = MDC.get("imdb_id")
         val seasonNumber = MDC.get("season")
         val episodeNumber = MDC.get("episode")
         val errorMessage = "Error while building Series $series Season $seasonNumber Episode $episodeNumber. $message"

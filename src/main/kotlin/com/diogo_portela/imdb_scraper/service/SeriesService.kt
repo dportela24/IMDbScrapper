@@ -86,7 +86,7 @@ class SeriesService(
 
     private fun validateJSoupResponse(imdbId: String, response: Connection.Response) {
         when (response.statusCode()) {
-            404 -> throw TVSeriesNotFoundException("Could not found TV Series with Id $imdbId")
+            404 -> throw TVSeriesNotFoundException("Could not find TV Series with Id $imdbId")
             !in 200..299 -> {
                 logger.warn("Received unexpected ${response.statusCode()} response status code.")
                 throw JSoupConnectionException("Unexpected response from IMDb.")
@@ -175,7 +175,7 @@ class SeriesService(
     private fun getNumberSeasons(doc: Document) : Int {
         val numberSeasonsText = doc.getElementsByAttributeValueStarting("for", "browse-episodes-season").first()?.text() // For multiple seasons
             ?: run{
-                doc.getElementsByAttributeValueStarting("class", "BrowseEpisodes__BrowseLinksContainer").first() // For single seasons
+                doc.getElementsByClass("episodes-browse-episodes").first() // For single seasons
                     ?.getElementsByAttributeValueContaining("href", "season")?.text()
             }
             ?: throw raiseBuildingError(generateErrorMessage("numberSeasons"))
