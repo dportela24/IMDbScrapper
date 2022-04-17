@@ -1,6 +1,7 @@
 package com.diogo_portela.imdb_scraper.controller
 
 import com.diogo_portela.imdb_scraper.helper.generateImdbId
+import com.diogo_portela.imdb_scraper.helper.generateName
 import com.diogo_portela.imdb_scraper.helper.generateSeries
 import com.diogo_portela.imdb_scraper.model.ErrorDetails
 import com.diogo_portela.imdb_scraper.model.exception.*
@@ -35,14 +36,30 @@ class ScrapControllerTest {
     lateinit var objectMapper: ObjectMapper
 
     @Test
-    fun `Happy path - calls seriesService and returns the TV Series scrapped by it`() {
+    fun `ScrapByTitle - Happy path - calls seriesService and returns the TV Series scrapped by it`() {
         val imdbId = generateImdbId()
         val expectedSeries = generateSeries(imdbId)
         val expectedSeriesJson = objectMapper.writeValueAsString(expectedSeries)
 
-        every { seriesService.scrapTitle(imdbId) } returns expectedSeries
+        every { seriesService.scrapTitleById(imdbId) } returns expectedSeries
 
         mockMVc.get("/scrap/id/$imdbId")
+            .andExpect{
+                status { isOk() }
+                content { contentType(MediaType.APPLICATION_JSON) }
+                content { json(expectedSeriesJson) }
+            }
+    }
+
+    @Test
+    fun `ScrapByName - Happy path - calls seriesService and returns the TV Series scrapped by it`() {
+        val name = generateName()
+        val expectedSeries = generateSeries(name = name)
+        val expectedSeriesJson = objectMapper.writeValueAsString(expectedSeries)
+
+        every { seriesService.scrapTitleByName(name) } returns expectedSeries
+
+        mockMVc.get("/scrap/name/$name")
             .andExpect{
                 status { isOk() }
                 content { contentType(MediaType.APPLICATION_JSON) }
@@ -63,7 +80,7 @@ class ScrapControllerTest {
 
         val expectedErrorDetailsJson = objectMapper.writeValueAsString(expectedErrorDetails)
 
-        every { seriesService.scrapTitle(imdbId) } throws NotATvSeriesException(exceptionMessage)
+        every { seriesService.scrapTitleById(imdbId) } throws NotATvSeriesException(exceptionMessage)
 
         mockMVc.get("/scrap/id/$imdbId")
             .andExpect{
@@ -86,7 +103,7 @@ class ScrapControllerTest {
 
         val expectedErrorDetailsJson = objectMapper.writeValueAsString(expectedErrorDetails)
 
-        every { seriesService.scrapTitle(imdbId) } throws JSoupConnectionException(exceptionMessage)
+        every { seriesService.scrapTitleById(imdbId) } throws JSoupConnectionException(exceptionMessage)
 
         mockMVc.get("/scrap/id/$imdbId")
             .andExpect{
@@ -109,7 +126,7 @@ class ScrapControllerTest {
 
         val expectedErrorDetailsJson = objectMapper.writeValueAsString(expectedErrorDetails)
 
-        every { seriesService.scrapTitle(imdbId) } throws SeriesScrappingErrorException(exceptionMessage)
+        every { seriesService.scrapTitleById(imdbId) } throws SeriesScrappingErrorException(exceptionMessage)
 
         mockMVc.get("/scrap/id/$imdbId")
             .andExpect{
@@ -132,7 +149,7 @@ class ScrapControllerTest {
 
         val expectedErrorDetailsJson = objectMapper.writeValueAsString(expectedErrorDetails)
 
-        every { seriesService.scrapTitle(imdbId) } throws InvalidImdbIdException(exceptionMessage)
+        every { seriesService.scrapTitleById(imdbId) } throws InvalidImdbIdException(exceptionMessage)
 
         mockMVc.get("/scrap/id/$imdbId")
             .andExpect{
@@ -155,7 +172,7 @@ class ScrapControllerTest {
 
         val expectedErrorDetailsJson = objectMapper.writeValueAsString(expectedErrorDetails)
 
-        every { seriesService.scrapTitle(imdbId) } throws TVSeriesNotFoundException(exceptionMessage)
+        every { seriesService.scrapTitleById(imdbId) } throws TVSeriesNotFoundException(exceptionMessage)
 
         mockMVc.get("/scrap/id/$imdbId")
             .andExpect{
@@ -178,7 +195,7 @@ class ScrapControllerTest {
 
         val expectedErrorDetailsJson = objectMapper.writeValueAsString(expectedErrorDetails)
 
-        every { seriesService.scrapTitle(imdbId) } throws RuntimeException(exceptionMessage)
+        every { seriesService.scrapTitleById(imdbId) } throws RuntimeException(exceptionMessage)
 
         mockMVc.get("/scrap/id/$imdbId")
             .andExpect{

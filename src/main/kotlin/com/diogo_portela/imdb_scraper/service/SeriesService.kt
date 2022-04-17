@@ -17,15 +17,25 @@ import java.time.Duration
 @Service
 class SeriesService(
     val jSoupConnection: JSoupConnection,
-    val seasonService: SeasonService
+    val seasonService: SeasonService,
+    val searchService: SearchService
 ) {
     val logger = LoggerFactory.getLogger(this::class.java)
 
-    fun scrapTitle(imdbId: String) : Series {
+    fun scrapTitleById(imdbId: String) : Series {
         MDC.put("imdb_id", imdbId)
 
         if (!validateImdbId(imdbId)) throw InvalidImdbIdException("Requested $imdbId is not a valid IMDb id")
 
+        return buildSeries(imdbId)
+    }
+
+    fun scrapTitleByName(name: String) : Series {
+        MDC.put("series_name", name)
+
+        val imdbId = searchService.searchByName(name, 1).first().imdbId
+
+        println("imdb:$imdbId")
         return buildSeries(imdbId)
     }
 

@@ -34,3 +34,6 @@ fun getParseDateFunctions() : Set<(String) -> TemporalAccessor> = setOf(
     { input -> YearMonth.parse(input, DateTimeFormatter.ofPattern("MMM[.] yyyy")) },
     { input -> Year.parse(input, DateTimeFormatter.ofPattern("yyyy")) }
 )
+
+fun <T> isNullOrEmpty(input: T?, emptyValue: T) : Boolean =
+    input?.run { this == emptyValue } ?: true

@@ -12,6 +12,8 @@ import kotlin.random.Random.Default.nextLong
 
 fun generateImdbId() = "tt" + nextInt(10000000, 99999999)
 
+fun generateName() = "My series ${nextInt(1, 101)}"
+
 fun generateEpisode(
     imdbId: String = generateImdbId(),
     number: Int = nextInt(1, 25),

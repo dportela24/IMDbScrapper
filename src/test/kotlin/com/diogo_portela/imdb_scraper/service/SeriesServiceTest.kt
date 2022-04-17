@@ -2,6 +2,7 @@ package com.diogo_portela.imdb_scraper.service
 
 import com.diogo_portela.imdb_scraper.helper.*
 import com.diogo_portela.imdb_scraper.model.JSoupConnection
+import com.diogo_portela.imdb_scraper.model.SearchResult
 import com.diogo_portela.imdb_scraper.model.Season
 import com.diogo_portela.imdb_scraper.model.SeriesScrappedData
 import com.diogo_portela.imdb_scraper.model.exception.*
@@ -21,6 +22,7 @@ import java.time.Duration
 class SeriesServiceTest {
     val jSoupResponse = mockk<Connection.Response>()
     val seasonService = mockk<SeasonService>()
+    val searchService = mockk<SearchService>()
 
     val jSoupConnection = mockk<JSoupConnection>()
     val doc = mockk<Document>()
@@ -29,7 +31,7 @@ class SeriesServiceTest {
     val episodeDurationElement = mockk<Element>()
     val numberSeasonsElement = mockk<Element>()
 
-    val subject = SeriesService(jSoupConnection, seasonService)
+    val subject = SeriesService(jSoupConnection, seasonService, searchService)
 
     fun setupMocks(seriesData: SeriesScrappedData, seasons: Set<Season> = emptySet()) {
         every { jSoupConnection.newConnection(any()).execute()} returns jSoupResponse
@@ -73,14 +75,33 @@ class SeriesServiceTest {
     }
 
     @Test
-    fun `Happy path`() {
+    fun `ScrapById - Happy path`() {
         val imdbId = generateImdbId()
         val seriesData = generateSeriesScrappedData()
         val expectedSeries = generateSeries(imdbId, seriesData)
 
         setupMocks(seriesData, expectedSeries.seasons)
 
-        val actualSeries = subject.scrapTitle(imdbId)
+        val actualSeries = subject.scrapTitleById(imdbId)
+
+        assertEquals(expectedSeries, actualSeries)
+        verifyMocks()
+    }
+
+    @Test
+    fun `ScrapByName - Happy path`() {
+        val name = generateName()
+        val imdbId = generateImdbId()
+        val linkedData = generateApplicationLinkedDataJson(name = name)
+        val seriesData = generateSeriesScrappedData(linkedData)
+        val expectedSeries = generateSeries(imdbId, seriesData)
+        val searchResult = SearchResult(imdbId, name)
+
+        setupMocks(seriesData, expectedSeries.seasons)
+
+        every { searchService.searchByName(name, 1) } returns listOf(searchResult)
+
+        val actualSeries = subject.scrapTitleByName(name)
 
         assertEquals(expectedSeries, actualSeries)
         verifyMocks()
@@ -97,7 +118,7 @@ class SeriesServiceTest {
 
         setupMocks(seriesData, expectedSeries.seasons)
 
-        val actualSeries = subject.scrapTitle(imdbId)
+        val actualSeries = subject.scrapTitleById(imdbId)
 
         assertEquals(expectedSeries, actualSeries)
         assertEquals(alternateName, actualSeries.name)
@@ -115,7 +136,7 @@ class SeriesServiceTest {
 
         setupMocks(seriesData, expectedSeries.seasons)
 
-        val actualSeries = subject.scrapTitle(imdbId)
+        val actualSeries = subject.scrapTitleById(imdbId)
 
         assertEquals(expectedSeries, actualSeries)
         assertEquals(name, actualSeries.name)
@@ -132,7 +153,7 @@ class SeriesServiceTest {
 
         setupMocks(seriesData, expectedSeries.seasons)
 
-        val actualSeries = subject.scrapTitle(imdbId)
+        val actualSeries = subject.scrapTitleById(imdbId)
 
         assertEquals(expectedSeries, actualSeries)
         assertEquals(startYear, actualSeries.startYear)
@@ -149,7 +170,7 @@ class SeriesServiceTest {
 
         setupMocks(seriesData, expectedSeries.seasons)
 
-        val actualSeries = subject.scrapTitle(imdbId)
+        val actualSeries = subject.scrapTitleById(imdbId)
 
         assertEquals(expectedSeries, actualSeries)
         assertEquals(year, actualSeries.startYear)
@@ -167,7 +188,7 @@ class SeriesServiceTest {
 
         setupMocks(seriesData, expectedSeries.seasons)
 
-        val actualSeries = subject.scrapTitle(imdbId)
+        val actualSeries = subject.scrapTitleById(imdbId)
 
         assertEquals(expectedSeries, actualSeries)
         assertEquals(startYear, actualSeries.startYear)
@@ -184,7 +205,7 @@ class SeriesServiceTest {
         val expectedDuration = Duration.ofMinutes(minutes.toLong())
 
         setupMocks(seriesData, expectedSeries.seasons)
-        val actualSeries = subject.scrapTitle(imdbId)
+        val actualSeries = subject.scrapTitleById(imdbId)
 
         assertEquals(expectedSeries, actualSeries)
         assertEquals(expectedDuration, actualSeries.episodeDuration)
@@ -200,7 +221,7 @@ class SeriesServiceTest {
         val expectedDuration = Duration.ofHours(hours.toLong())
 
         setupMocks(seriesData, expectedSeries.seasons)
-        val actualSeries = subject.scrapTitle(imdbId)
+        val actualSeries = subject.scrapTitleById(imdbId)
 
         assertEquals(expectedSeries, actualSeries)
         assertEquals(expectedDuration, actualSeries.episodeDuration)
@@ -217,7 +238,7 @@ class SeriesServiceTest {
         val expectedDuration = Duration.ofHours(hours.toLong()).plusMinutes(minutes.toLong())
 
         setupMocks(seriesData, expectedSeries.seasons)
-        val actualSeries = subject.scrapTitle(imdbId)
+        val actualSeries = subject.scrapTitleById(imdbId)
 
         assertEquals(expectedSeries, actualSeries)
         assertEquals(expectedDuration, actualSeries.episodeDuration)
@@ -233,7 +254,7 @@ class SeriesServiceTest {
         setupMocks(seriesData, expectedSeries.seasons)
         every { doc.getElementsByAttributeValueStarting("data-testid", "title-techspec_runtime").first() } returns null
 
-        val actualSeries = subject.scrapTitle(imdbId)
+        val actualSeries = subject.scrapTitleById(imdbId)
 
         assertEquals(expectedSeries, actualSeries)
         assertNull(actualSeries.episodeDuration)
@@ -246,7 +267,7 @@ class SeriesServiceTest {
         val expectedSeries = generateSeries(imdbId, seriesData)
 
         setupMocks(seriesData, expectedSeries.seasons)
-        val actualSeries = subject.scrapTitle(imdbId)
+        val actualSeries = subject.scrapTitleById(imdbId)
 
         assertEquals(expectedSeries, actualSeries)
         assertEquals(1, actualSeries.numberSeasons)
@@ -261,7 +282,7 @@ class SeriesServiceTest {
         val expectedSeries = generateSeries(imdbId, seriesData)
 
         setupMocks(seriesData, expectedSeries.seasons)
-        val actualSeries = subject.scrapTitle(imdbId)
+        val actualSeries = subject.scrapTitleById(imdbId)
 
         assertEquals(expectedSeries, actualSeries)
         assertEquals(numberSeasons, actualSeries.numberSeasons)
@@ -276,7 +297,7 @@ class SeriesServiceTest {
         val expectedSeries = generateSeries(imdbId, seriesData)
 
         setupMocks(seriesData, expectedSeries.seasons)
-        val actualSeries = subject.scrapTitle(imdbId)
+        val actualSeries = subject.scrapTitleById(imdbId)
 
         assertEquals(expectedSeries, actualSeries)
         assertNull(actualSeries.ratingValue)
@@ -291,7 +312,7 @@ class SeriesServiceTest {
         val expectedSeries = generateSeries(imdbId, seriesData)
 
         setupMocks(seriesData, expectedSeries.seasons)
-        val actualSeries = subject.scrapTitle(imdbId)
+        val actualSeries = subject.scrapTitleById(imdbId)
 
         assertEquals(expectedSeries, actualSeries)
         assertNull(actualSeries.posterURL)
@@ -305,7 +326,7 @@ class SeriesServiceTest {
         val expectedSeries = generateSeries(imdbId, seriesData)
 
         setupMocks(seriesData, expectedSeries.seasons)
-        val actualSeries = subject.scrapTitle(imdbId)
+        val actualSeries = subject.scrapTitleById(imdbId)
 
         assertEquals(expectedSeries, actualSeries)
         assertNull(actualSeries.summary)
@@ -316,7 +337,7 @@ class SeriesServiceTest {
         val imdbId = "An invalid IMDb id"
         val expectedErrorMessage = "Requested $imdbId is not a valid IMDb id"
 
-        val ex = assertThrows<InvalidImdbIdException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<InvalidImdbIdException> { subject.scrapTitleById(imdbId) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
     }
@@ -331,7 +352,7 @@ class SeriesServiceTest {
         setupMocks(seriesData)
         every { jSoupConnection.newConnection(any()).execute() } throws RuntimeException(connectionErrorMessage)
 
-        val ex = assertThrows<JSoupConnectionException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<JSoupConnectionException> { subject.scrapTitleById(imdbId) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
         assertTrue(ex.message.contains(connectionErrorMessage))
@@ -346,7 +367,7 @@ class SeriesServiceTest {
         setupMocks(seriesData)
         every { jSoupResponse.statusCode() } returns 500
 
-        val ex = assertThrows<JSoupConnectionException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<JSoupConnectionException> { subject.scrapTitleById(imdbId) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
     }
@@ -360,7 +381,7 @@ class SeriesServiceTest {
         setupMocks(seriesData)
         every { jSoupResponse.statusCode() } returns 404
 
-        val ex = assertThrows<TVSeriesNotFoundException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<TVSeriesNotFoundException> { subject.scrapTitleById(imdbId) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
     }
@@ -374,7 +395,7 @@ class SeriesServiceTest {
         setupMocks(seriesData)
         every { doc.getElementsByAttributeValueStarting("type", "application/ld+json").first() } returns null
 
-        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitleById(imdbId) }
 
         assertTrue(ex.message.contains(expectedExceptionMessage))
     }
@@ -387,7 +408,7 @@ class SeriesServiceTest {
 
         setupMocks(seriesData)
 
-        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitleById(imdbId) }
 
         assertTrue(ex.message.contains(expectedExceptionMessage))
     }
@@ -400,7 +421,7 @@ class SeriesServiceTest {
         val expectedErrorMessage = "The imdb id $imdbId given is not a TV Series but a $wrongTitleType"
 
         setupMocks(seriesData)
-        val ex = assertThrows<NotATvSeriesException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<NotATvSeriesException> { subject.scrapTitleById(imdbId) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
     }
@@ -414,7 +435,7 @@ class SeriesServiceTest {
         setupMocks(seriesData)
         every { doc.getElementsByAttributeValueStarting("data-testid", "hero-title-block__metadata").first()?.children() } returns null
 
-        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitleById(imdbId) }
 
         assertTrue(ex.message.contains(expectedExceptionMessage))
     }
@@ -428,7 +449,7 @@ class SeriesServiceTest {
         setupMocks(seriesData)
         every { undertitleElements[1]?.children()?.last()?.text() } returns null
 
-        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitleById(imdbId) }
 
         assertTrue(ex.message.contains(expectedExceptionMessage))
     }
@@ -441,7 +462,7 @@ class SeriesServiceTest {
         val expectedExceptionMessage = generateErrorMessage("runtime", runtime)
 
         setupMocks(seriesData)
-        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitleById(imdbId) }
 
         assertTrue(ex.message.contains(expectedExceptionMessage))
     }
@@ -454,7 +475,7 @@ class SeriesServiceTest {
         val expectedExceptionMessage = generateErrorMessage("runtime", runtime)
 
         setupMocks(seriesData)
-        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitleById(imdbId) }
 
         assertTrue(ex.message.contains(expectedExceptionMessage))
     }
@@ -467,7 +488,7 @@ class SeriesServiceTest {
         val expectedErrorMessage = generateErrorMessage("episodeDuration", episodeDuration)
 
         setupMocks(seriesData)
-        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitleById(imdbId) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
     }
@@ -480,7 +501,7 @@ class SeriesServiceTest {
         val expectedErrorMessage = generateErrorMessage("episodeDuration", episodeDuration)
 
         setupMocks(seriesData)
-        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitleById(imdbId) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
     }
@@ -495,7 +516,7 @@ class SeriesServiceTest {
         every { doc.getElementsByClass("episodes-browse-episodes").first() } returns null
         every { doc.getElementsByAttributeValueStarting("for", "browse-episodes-season").first() } returns null
 
-        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitleById(imdbId) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
     }
@@ -508,7 +529,7 @@ class SeriesServiceTest {
         val expectedErrorMessage = generateErrorMessage("numberSeasons", numberSeasons)
 
         setupMocks(seriesData)
-        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitleById(imdbId) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
     }
@@ -521,7 +542,7 @@ class SeriesServiceTest {
         val expectedErrorMessage = generateErrorMessage("numberSeasons", numberSeasons)
 
         setupMocks(seriesData)
-        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<SeriesScrappingErrorException> { subject.scrapTitleById(imdbId) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
     }
@@ -537,7 +558,7 @@ class SeriesServiceTest {
 
         every { seasonService.getSeasonsOfSeries(imdbId, series.numberSeasons) } throws SeasonScrappingErrorException(expectedErrorMessage)
 
-        val ex = assertThrows<SeasonScrappingErrorException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<SeasonScrappingErrorException> { subject.scrapTitleById(imdbId) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
     }
@@ -552,7 +573,7 @@ class SeriesServiceTest {
         setupMocks(seriesData, series.seasons)
         every { seasonService.getSeasonsOfSeries(imdbId, series.numberSeasons) } throws EpisodeScrappingErrorException(expectedErrorMessage)
 
-        val ex = assertThrows<EpisodeScrappingErrorException> { subject.scrapTitle(imdbId) }
+        val ex = assertThrows<EpisodeScrappingErrorException> { subject.scrapTitleById(imdbId) }
 
         assertTrue(ex.message.contains(expectedErrorMessage))
     }

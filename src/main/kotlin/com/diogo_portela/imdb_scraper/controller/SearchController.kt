@@ -25,7 +25,7 @@ class SearchController(
     fun searchByName(
         @RequestParam(name = "q") searchInput: String?,
         @RequestParam(name = "limit", required = false) limitRequest: Int?
-    ) : ResponseEntity<Set<SearchResult>> {
+    ) : ResponseEntity<List<SearchResult>> {
         MDC.put("request_id", UUID.randomUUID().toString())
         logger.info("Received searchByName request for $searchInput")
 

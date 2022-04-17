@@ -42,7 +42,7 @@ class SearchControllerTest {
     @Test
     fun `Happy path - no limit - calls searchService and returns the search results scrapped by it, limited by default limit`() {
         val searchQuery = "my%20search%20query"
-        val expectedResults = (1..defaultSearchLimit.toInt()).map { generateSearchResult() }.toSet()
+        val expectedResults = (1..defaultSearchLimit.toInt()).map { generateSearchResult() }
         val expectedResultsJson = objectMapper.writeValueAsString(expectedResults)
 
         val limitSlot = slot<Int>()
@@ -62,7 +62,7 @@ class SearchControllerTest {
     fun `Happy path - limit smaller than default - calls searchService and returns the search results scrapped by it, limited by request limit`() {
         val searchQuery = "my%20search%20query"
         val requestLimit = defaultSearchLimit.toInt() - 1
-        val expectedResults = (1..defaultSearchLimit.toInt()).map { generateSearchResult() }.toSet()
+        val expectedResults = (1..defaultSearchLimit.toInt()).map { generateSearchResult() }
         val expectedResultsJson = objectMapper.writeValueAsString(expectedResults)
 
         val limitSlot = slot<Int>()
@@ -82,7 +82,7 @@ class SearchControllerTest {
     fun `Happy path - limit greater than default - calls searchService and returns the search results scrapped by it, limited by default limit`() {
         val searchQuery = "my%20search%20query"
         val requestLimit = defaultSearchLimit.toInt() + 1
-        val expectedResults = (1..defaultSearchLimit.toInt()).map { generateSearchResult() }.toSet()
+        val expectedResults = (1..defaultSearchLimit.toInt()).map { generateSearchResult() }
         val expectedResultsJson = objectMapper.writeValueAsString(expectedResults)
 
         val limitSlot = slot<Int>()

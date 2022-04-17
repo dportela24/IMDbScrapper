@@ -20,7 +20,7 @@ class SearchService(
 ) {
     val logger = LoggerFactory.getLogger(this::class.java)
 
-    fun searchByName(searchInput: String?, limit: Int): Set<SearchResult> {
+    fun searchByName(searchInput: String?, limit: Int): List<SearchResult> {
         if (searchInput.isNullOrEmpty()) throw MissingParametersException(listOf("searchInput"))
 
         val doc = fetchSearchResults(searchInput)
@@ -29,7 +29,6 @@ class SearchService(
 
         return resultsList
             .map { getSearchItem(it) }
-            .toSet()
     }
 
     private fun raiseSearchError(message: String) : SearchScrappingErrorException {

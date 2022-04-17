@@ -2,6 +2,7 @@ package com.diogo_portela.imdb_scraper.service
 
 import com.diogo_portela.imdb_scraper.helper.generateErrorMessage
 import com.diogo_portela.imdb_scraper.helper.getParseDateFunctions
+import com.diogo_portela.imdb_scraper.helper.isNullOrEmpty
 import com.diogo_portela.imdb_scraper.helper.matchGroupsInRegex
 import com.diogo_portela.imdb_scraper.model.Episode
 import com.diogo_portela.imdb_scraper.model.exception.EpisodeScrappingErrorException
@@ -91,7 +92,7 @@ class EpisodeService{
             .removeSuffix(")")
             .replace(",", "")
             .toIntOrNull()
-
+            .let { if (it != 0) it else null }
     private fun getImdbId(element: Element) : String {
         val url = element.attr("href")
 
@@ -124,12 +125,12 @@ class EpisodeService{
         val ratingValueText = element.getElementsByClass("ipl-rating-star__rating").first()?.text()
         val ratingCountText = element.getElementsByClass("ipl-rating-star__total-votes").first()?.text()
 
-        val ratingValue = ratingValueText?.toFloatOrNull()
-        val ratingCount = ratingCountText?.let { parseRatingCount(it) }
+        var ratingValue = ratingValueText?.toFloatOrNull().let { if (it != 0F) it else null }
+        var ratingCount = ratingCountText?.let { parseRatingCount(it) }
 
-        if (ratingValue == null && ratingCount != null) {
+        if (ratingCount != null && ratingValue == null) {
             throw raiseBuildingError("Rating count exists but no rating value")
-        } else if (ratingCount == null && ratingValue != null) {
+        } else if (ratingValue != null && ratingCount == null) {
             throw raiseBuildingError("Rating value exists but no rating count")
         }
 
