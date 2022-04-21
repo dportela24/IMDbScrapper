@@ -21,7 +21,7 @@ fun generateSeasonUrl(imdbId: String, seasonNumber: Int) =
     "/title/$imdbId/episodes?season=$seasonNumber"
 
 fun generateSearchUrl(name: String) : String
-    = "/search/title/?title=$name&title_type=tv_series"
+    = "/find?q=$name&s=tt&ttype=tv&ref_=fn_tv"
 
 fun generateErrorMessage(field: String, input: String? = null) : String {
     return input?.run {

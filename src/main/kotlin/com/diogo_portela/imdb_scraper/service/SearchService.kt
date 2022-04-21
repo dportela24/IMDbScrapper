@@ -51,7 +51,7 @@ class SearchService(
     }
 
     private fun getSearchResults(doc: Document, limit: Int) : List<Element> {
-        val resultsList = doc.getElementsByClass("lister-list").first()?.children()
+        val resultsList = doc.getElementsByClass("findList").first()?.child(0)?.children()
             ?: throw EmptySearchResultException()
 
         return if (resultsList.size > limit) {
@@ -62,10 +62,10 @@ class SearchService(
     }
 
     private fun getSearchItem(element: Element) : SearchResult {
-        val header = element.getElementsByClass("lister-item-header").first()
-            ?: throw raiseSearchError(generateErrorMessage("searchResultHeader"))
+        val resultText = element.getElementsByClass("result_text").first()
+            ?: throw raiseSearchError(generateErrorMessage("searchResultText"))
 
-        val aLink = header.getElementsByTag("a").first()
+        val aLink = resultText.getElementsByTag("a").first()
             ?: throw raiseSearchError(generateErrorMessage("searchResultALink"))
 
         val url = aLink.attr("href")

@@ -32,7 +32,7 @@ class SearchServiceTest {
 
     fun setupMocks(scrappedData: List<SearchScrappedData>){
         every { jSoupConnection.newConnection(any()).get() } returns doc
-        every { doc.getElementsByClass("lister-list").first()?.children() } answers {
+        every { doc.getElementsByClass("findList").first()?.child(0)?.children() } answers {
             resultsList.ifEmpty { null }
         }
 
@@ -41,7 +41,7 @@ class SearchServiceTest {
             val headerElement = mockk<Element>().also { headerElements.add(it) }
             val aLinkElement = mockk<Element>().also { aLinkElements.add(it) }
 
-            every { resultElement.getElementsByClass("lister-item-header").first() } returns headerElement
+            every { resultElement.getElementsByClass("result_text").first() } returns headerElement
             every { headerElement.getElementsByTag("a").first() } returns aLinkElement
 
             result.url?.let { every { aLinkElement.attr("href") } returns it }
@@ -51,7 +51,7 @@ class SearchServiceTest {
 
     fun verifyMocks(limit: Int) {
         verify(exactly = 1) { jSoupConnection.newConnection(any()).get() }
-        verify(exactly = 1) { doc.getElementsByClass("lister-list").first()?.children() }
+        verify(exactly = 1) { doc.getElementsByClass("findList").first()?.child(0)?.children() }
 
         resultsList.indices.forEach { i ->
             val resultElement = resultsList[i]
@@ -59,7 +59,7 @@ class SearchServiceTest {
             val aLinkElement = aLinkElements[i]
 
             if (i < limit) {
-                verify(exactly = 1) { resultElement.getElementsByClass("lister-item-header").first() }
+                verify(exactly = 1) { resultElement.getElementsByClass("result_text").first() }
                 verify(exactly = 1) { headerElement.getElementsByTag("a").first() }
                 verify(exactly = 1) { aLinkElement.attr("href") }
                 verify(exactly = 1) { aLinkElement.text() }
@@ -91,7 +91,7 @@ class SearchServiceTest {
         val numberSearchResults = nextInt( searchLimit + 1, searchLimit + 10)
         val (scrappedData, results) = setupSearchResults(numberSearchResults)
         val searchInput = "My search"
-        val expectedResults = results.subList(0, searchLimit).toSet()
+        val expectedResults = results.subList(0, searchLimit)
 
         setupMocks(scrappedData)
 
@@ -107,7 +107,7 @@ class SearchServiceTest {
         val numberSearchResults = nextInt(  1, searchLimit)
         val (scrappedData, results) = setupSearchResults(numberSearchResults)
         val searchInput = "My search"
-        val expectedResults = results.subList(0, numberSearchResults).toSet()
+        val expectedResults = results.subList(0, numberSearchResults)
 
         setupMocks(scrappedData)
 
@@ -167,10 +167,10 @@ class SearchServiceTest {
         val searchLimit = nextInt(1, 11)
         val searchStr = "My search"
         val scrappedData = generateSearchScrappedData()
-        val expectedErrorMessage = generateErrorMessage("searchResultHeader")
+        val expectedErrorMessage = generateErrorMessage("searchResultText")
 
         setupMocks(listOf(scrappedData))
-        every { resultsList.first()!!.getElementsByClass("lister-item-header").first() } returns null
+        every { resultsList.first()!!.getElementsByClass("result_text").first() } returns null
 
         val ex = assertThrows<SearchScrappingErrorException> { subject.searchByName(searchStr, searchLimit) }
 
